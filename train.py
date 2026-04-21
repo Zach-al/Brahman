@@ -11,29 +11,28 @@ from tokenizer import PaninianTokenizer
 from model import SanskritCoreModel, generate_vibhakti_mask
 from dataset import SanskritLogicDataset, collate_fn
 
+def check_model_health(model: nn.Module) -> bool:
+    """Check for NaN or Inf in model parameters."""
+    for name, param in model.named_parameters():
+        if torch.isnan(param).any() or torch.isinf(param).any():
+            print(f"CRITICAL: {name} has NaN/Inf values")
+            return False
+    return True
+
 def train():
-    parser = argparse.ArgumentParser(description="SanskritCore Cloud Training Loop")
+    parser = argparse.ArgumentParser(description="Brahman Stable Training Loop")
     parser.add_argument("--epochs", type=int, default=10)
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--lr", type=float, default=1e-4)
-    parser.add_argument("--ablation", action="store_true", help="Override Vibhakti Mask with standard causal mask")
+    parser.add_argument("--lr", type=float, default=3e-4)
+    parser.add_argument("--ablation", action="store_true")
     parser.add_argument("--checkpoint_dir", type=str, default="checkpoints")
     args = parser.parse_args()
 
-    # 1. Hardware Initialization (Cloud GPU Target)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"--- SanskritCore Execution Initialized ---")
+    print(f"--- Brahman Stable Training (v2) ---")
     print(f"Targeting Hardware: {device}")
-    if args.ablation:
-        print("MODE: Ablation Study (Causal Mask Only)")
-    else:
-        print("MODE: Neuro-Symbolic (Pāṇinian Vibhakti Mask)")
 
-    # 2. Setup Checkpointing
-    checkpoint_path = Path(args.checkpoint_dir)
-    checkpoint_path.mkdir(exist_ok=True)
-
-    # 3. Data Preparation
+    # Data & Model
     tokenizer = PaninianTokenizer()
     dataset = SanskritLogicDataset(num_samples=10000)
     vocab_size = len(dataset.vocab)
@@ -45,15 +44,15 @@ def train():
         collate_fn=lambda b: collate_fn(b, tokenizer.operator_map)
     )
 
-    # 4. Model Initialization
     model = SanskritCoreModel(vocab_size=vocab_size).to(device)
-    optimizer = optim.AdamW(model.parameters(), lr=args.lr)
-    criterion = nn.CrossEntropyLoss(ignore_index=0) # Ignore [PAD]
+    optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=0.01, betas=(0.9, 0.98), eps=1e-9)
     
-    # Enable Automatic Mixed Precision (AMP) for T4 Tensor Cores
-    scaler = torch.cuda.amp.GradScaler()
+    # Label Smoothing for stability
+    criterion = nn.CrossEntropyLoss(ignore_index=0, label_smoothing=0.1)
+    
+    # Setup Checkpointing
+    Path(args.checkpoint_dir).mkdir(exist_ok=True)
 
-    # 5. Training Loop
     global_step = 0
     for epoch in range(args.epochs):
         model.train()
@@ -62,62 +61,51 @@ def train():
         for batch_idx, batch in enumerate(loader):
             input_ids = batch["input_ids"].to(device)
             label_ids = batch["label_ids"].to(device)
+            case_ids = batch["case_ids"].to(device)
             mask = batch["vibhakti_mask"].to(device)
             
-            # Ablation Override: Replace Grammatical Mask with Causal Mask
             if args.ablation:
                 seq_len = input_ids.size(1)
-                mask = torch.triu(torch.full((seq_len, seq_len), float('-inf'), device=device), diagonal=1)
-                mask = mask.unsqueeze(0).unsqueeze(0) # [1, 1, seq_len, seq_len]
+                mask = torch.triu(torch.full((seq_len, seq_len), -1e9, device=device), diagonal=1)
+                mask = mask.unsqueeze(0).unsqueeze(0)
 
             optimizer.zero_grad()
             
-            # AMP Autocast
-            with torch.cuda.amp.autocast():
-                # We use the premise to predict the conclusion
-                # For simplicity in this prototype, we pass input_ids through the transformer
-                # and take the last hidden states to predict the label_ids sequence.
-                # Since label_ids might have different length, we clip/pad to match.
-                outputs = model(input_ids, mask)
+            # Forward with grammatical case information
+            outputs = model(input_ids, mask, case_ids=case_ids)
+            logits = outputs.view(-1, vocab_size)
+            
+            # Target mapping
+            target = torch.zeros_like(input_ids)
+            target[:, :label_ids.size(1)] = label_ids
+            target = target.view(-1)
+            
+            loss = criterion(logits, target)
+            
+            if torch.isnan(loss):
+                print(f"NaN loss at step {global_step}, skipping...")
+                continue
                 
-                # Reshape for loss calculation
-                # [Batch, Seq, Vocab] -> [Batch * Seq, Vocab]
-                logits = outputs.view(-1, vocab_size)
-                
-                # Align labels (simple sequence-to-sequence target mapping)
-                target = torch.zeros_like(input_ids)
-                target[:, :label_ids.size(1)] = label_ids
-                target = target.view(-1)
-                
-                loss = criterion(logits, target)
-
-            # Scaled Backward Pass
-            scaler.scale(loss).backward()
-            scaler.step(optimizer)
-            scaler.update()
+            loss.backward()
+            
+            # CRITICAL: Gradient clipping
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
+            optimizer.step()
             
             total_loss += loss.item()
             global_step += 1
             
-            if batch_idx % 50 == 0:
-                print(f"Epoch {epoch} | Step {batch_idx} | Loss: {loss.item():.4f}")
-                
-            # Periodic Cloud Checkpointing
+            if global_step % 50 == 0:
+                print(f"Epoch {epoch} | Step {global_step} | Loss: {loss.item():.4f}")
+                if not check_model_health(model):
+                    return
+
             if global_step % 500 == 0:
-                ckpt_file = checkpoint_path / f"ckpt_step_{global_step}.pth"
-                torch.save({
-                    'epoch': epoch,
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'loss': loss.item(),
-                }, ckpt_file)
-                print(f"✓ Checkpoint saved: {ckpt_file}")
+                torch.save(model.state_dict(), f"{args.checkpoint_dir}/stable_ckpt_{global_step}.pth")
 
-        print(f"Epoch {epoch} Complete. Average Loss: {total_loss / len(loader):.4f}")
-
-    # Final Save
-    torch.save(model.state_dict(), "sanskrit_core_final.pth")
-    print("\n✓ Training Complete. Model saved to sanskrit_core_final.pth")
+    torch.save(model.state_dict(), "brahman_stable_final.pth")
+    print("\n✓ Stable Training Complete.")
 
 if __name__ == "__main__":
     train()

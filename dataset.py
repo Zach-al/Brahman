@@ -87,12 +87,19 @@ class SanskritLogicDataset(Dataset):
         input_tokens = premise.split()
         input_ids = [self.vocab.get(t, 1) for t in input_tokens]
         
+        # Simple mapping: first word is often Kartā (0), second is Op, etc.
+        # In a real system, this would come from the AST/Lexer mapping.
+        case_ids = [0] * len(input_ids) 
+        if len(case_ids) > 2:
+            case_ids[2] = 4 # Assign Ablative (4) to the comparison limit
+        
         label_tokens = conclusion.split()
         label_ids = [self.vocab.get(t, 1) for t in label_tokens]
         
         return {
             "input_ids": torch.tensor(input_ids, dtype=torch.long),
             "label_ids": torch.tensor(label_ids, dtype=torch.long),
+            "case_ids": torch.tensor(case_ids, dtype=torch.long),
             "tokens": input_tokens,
             "nodes": nodes
         }
@@ -104,12 +111,13 @@ def collate_fn(batch: List[Dict[str, Any]], op_map: Dict[str, str]) -> Dict[str,
     """
     input_ids = [item["input_ids"] for item in batch]
     label_ids = [item["label_ids"] for item in batch]
+    case_ids = [item["case_ids"] for item in batch]
     batch_tokens = [item["tokens"] for item in batch]
     batch_nodes = [item["nodes"] for item in batch]
     
-    # Pad input and label sequences
     input_ids_padded = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True, padding_value=0)
     label_ids_padded = torch.nn.utils.rnn.pad_sequence(label_ids, batch_first=True, padding_value=0)
+    case_ids_padded = torch.nn.utils.rnn.pad_sequence(case_ids, batch_first=True, padding_value=0)
     
     # Generate the Grammatical Constraint Mask M
     mask = generate_vibhakti_mask(batch_tokens, batch_nodes, op_map)
@@ -117,6 +125,7 @@ def collate_fn(batch: List[Dict[str, Any]], op_map: Dict[str, str]) -> Dict[str,
     return {
         "input_ids": input_ids_padded,
         "label_ids": label_ids_padded,
+        "case_ids": case_ids_padded,
         "vibhakti_mask": mask
     }
 
