@@ -1,0 +1,299 @@
+{
+  "benchmark_name": "compositionality",
+  "model_name": "test_ablated",
+  "accuracy": 0.06666666666666667,
+  "accuracy_ci": [
+    0.018477023791270378,
+    0.2132345836261692
+  ],
+  "n_examples": 30,
+  "n_correct": 2,
+  "per_type_accuracy": {
+    "tatpurusa": 0.06666666666666667
+  },
+  "latency_ms": 79.19314173333366,
+  "examples": [
+    {
+      "id": "comp_000",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 3,
+      "correct_idx": 2,
+      "predicted_meaning": "a lamp used by scholars",
+      "scores": [
+        -10.88,
+        -10.867,
+        -10.87,
+        -10.829
+      ]
+    },
+    {
+      "id": "comp_001",
+      "correct": false,
+      "expected": "1",
+      "predicted_idx": 0,
+      "correct_idx": 1,
+      "predicted_meaning": "an indecisive person",
+      "scores": [
+        -10.846,
+        -10.876,
+        -10.86,
+        -10.875
+      ]
+    },
+    {
+      "id": "comp_002",
+      "correct": true,
+      "expected": "2",
+      "predicted_idx": 2,
+      "correct_idx": 2,
+      "predicted_meaning": "one who fights for righteousness",
+      "scores": [
+        -10.852,
+        -10.844,
+        -10.842,
+        -10.865
+      ]
+    },
+    {
+      "id": "comp_003",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 2,
+      "correct_idx": 3,
+      "predicted_meaning": "a person with a round face",
+      "scores": [
+        -10.816,
+        -10.838,
+        -10.806,
+        -10.835
+      ]
+    },
+    {
+      "id": "comp_004",
+      "correct": false,
+      "expected": "1",
+      "predicted_idx": 2,
+      "correct_idx": 1,
+      "predicted_meaning": "a person who is blind",
+      "scores": [
+        -10.817,
+        -10.821,
+        -10.8,
+        -10.817
+      ]
+    },
+    {
+      "id": "comp_005",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 0,
+      "correct_idx": 2,
+      "predicted_meaning": "a river that measures time",
+      "scores": [
+        -10.794,
+        -10.815,
+        -10.803,
+        -10.801
+      ]
+    },
+    {
+      "id": "comp_006",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 2,
+      "correct_idx": 3,
+      "predicted_meaning": "a cowardly person",
+      "scores": [
+        -10.838,
+        -10.84,
+        -10.824,
+        -10.836
+      ]
+    },
+    {
+      "id": "comp_007",
+      "correct": false,
+      "expected": "1",
+      "predicted_idx": 0,
+      "correct_idx": 1,
+      "predicted_meaning": "a decorative lamp",
+      "scores": [
+        -10.783,
+        -10.802,
+        -10.801,
+        -10.798
+      ]
+    },
+    {
+      "id": "comp_008",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 0,
+      "correct_idx": 3,
+      "predicted_meaning": "a useless weapon",
+      "scores": [
+        -10.815,
+        -10.837,
+        -10.846,
+        -10.831
+      ]
+    },
+    {
+      "id": "comp_009",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 3,
+      "correct_idx": 2,
+      "predicted_meaning": "an arrow used in speech",
+      "scores": [
+        -10.82,
+        -10.818,
+        -10.81,
+        -10.766
+      ]
+    },
+    {
+      "id": "comp_010",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 0,
+      "correct_idx": 2,
+      "predicted_meaning": "an ocean with a mind",
+      "scores": [
+        -10.816,
+        -10.826,
+        -10.837,
+        -10.845
+      ]
+    },
+    {
+      "id": "comp_011",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 2,
+      "correct_idx": 3,
+      "predicted_meaning": "a broken cart wheel",
+      "scores": [
+        -10.841,
+        -10.869,
+        -10.83,
+        -10.847
+      ]
+    },
+    {
+      "id": "comp_012",
+      "correct": false,
+      "expected": "1",
+      "predicted_idx": 0,
+      "correct_idx": 1,
+      "predicted_meaning": "a decorative lamp",
+      "scores": [
+        -10.783,
+        -10.802,
+        -10.801,
+        -10.798
+      ]
+    },
+    {
+      "id": "comp_013",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 0,
+      "correct_idx": 2,
+      "predicted_meaning": "an ocean with a mind",
+      "scores": [
+        -10.816,
+        -10.826,
+        -10.837,
+        -10.845
+      ]
+    },
+    {
+      "id": "comp_014",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 0,
+      "correct_idx": 3,
+      "predicted_meaning": "a useless weapon",
+      "scores": [
+        -10.815,
+        -10.837,
+        -10.846,
+        -10.831
+      ]
+    },
+    {
+      "id": "comp_015",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 2,
+      "correct_idx": 3,
+      "predicted_meaning": "a cowardly person",
+      "scores": [
+        -10.838,
+        -10.84,
+        -10.824,
+        -10.836
+      ]
+    },
+    {
+      "id": "comp_016",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 0,
+      "correct_idx": 2,
+      "predicted_meaning": "a river that measures time",
+      "scores": [
+        -10.794,
+        -10.815,
+        -10.803,
+        -10.801
+      ]
+    },
+    {
+      "id": "comp_017",
+      "correct": false,
+      "expected": "1",
+      "predicted_idx": 0,
+      "correct_idx": 1,
+      "predicted_meaning": "a decorative lamp",
+      "scores": [
+        -10.783,
+        -10.802,
+        -10.801,
+        -10.798
+      ]
+    },
+    {
+      "id": "comp_018",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 3,
+      "correct_idx": 2,
+      "predicted_meaning": "an arrow used in speech",
+      "scores": [
+        -10.82,
+        -10.818,
+        -10.81,
+        -10.766
+      ]
+    },
+    {
+      "id": "comp_019",
+      "correct": false,
+      "expected": "1",
+      "predicted_idx": 0,
+      "correct_idx": 1,
+      "predicted_meaning": "a decorative lamp",
+      "scores": [
+        -10.783,
+        -10.802,
+        -10.801,
+        -10.798
+      ]
+    }
+  ],
+  "notes": "",
+  "accuracy_pct": "6.67%"
+}

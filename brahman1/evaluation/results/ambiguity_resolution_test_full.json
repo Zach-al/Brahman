@@ -1,0 +1,144 @@
+{
+  "benchmark_name": "ambiguity_resolution",
+  "model_name": "test_full",
+  "accuracy": 0.0,
+  "accuracy_ci": [
+    0.0,
+    0.2775327998628892
+  ],
+  "n_examples": 10,
+  "n_correct": 0,
+  "per_type_accuracy": {
+    "gerund_ambiguity": 0.0,
+    "infinitive_ambiguity": 0.0,
+    "pp_attachment": 0.0,
+    "argument_structure": 0.0,
+    "lexical_ambiguity": 0.0,
+    "quantifier_scope": 0.0
+  },
+  "latency_ms": 24.87907080000049,
+  "examples": [
+    {
+      "id": "amb_000",
+      "correct": false,
+      "expected": "b",
+      "distance_ab": 0.1409,
+      "is_distinct": false,
+      "sim_to_a": 0.8591,
+      "sim_to_b": 1.0,
+      "predicted_reading": "b",
+      "preferred_reading": "b",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_001",
+      "correct": false,
+      "expected": "a",
+      "distance_ab": 0.0437,
+      "is_distinct": false,
+      "sim_to_a": 0.977,
+      "sim_to_b": 0.9967,
+      "predicted_reading": "b",
+      "preferred_reading": "a",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_002",
+      "correct": false,
+      "expected": "b",
+      "distance_ab": 0.2743,
+      "is_distinct": true,
+      "sim_to_a": 0.7492,
+      "sim_to_b": 0.088,
+      "predicted_reading": "a",
+      "preferred_reading": "b",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_003",
+      "correct": false,
+      "expected": "a",
+      "distance_ab": 0.0052,
+      "is_distinct": false,
+      "sim_to_a": 0.3433,
+      "sim_to_b": 0.2643,
+      "predicted_reading": "a",
+      "preferred_reading": "a",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_004",
+      "correct": false,
+      "expected": "a",
+      "distance_ab": 0.7677,
+      "is_distinct": true,
+      "sim_to_a": -0.0356,
+      "sim_to_b": -0.0082,
+      "predicted_reading": "b",
+      "preferred_reading": "a",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_005",
+      "correct": false,
+      "expected": "a",
+      "distance_ab": 0.1765,
+      "is_distinct": true,
+      "sim_to_a": 0.6524,
+      "sim_to_b": 0.9348,
+      "predicted_reading": "b",
+      "preferred_reading": "a",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_006",
+      "correct": false,
+      "expected": "b",
+      "distance_ab": 0.5665,
+      "is_distinct": true,
+      "sim_to_a": 0.9067,
+      "sim_to_b": 0.7366,
+      "predicted_reading": "a",
+      "preferred_reading": "b",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_007",
+      "correct": false,
+      "expected": "a",
+      "distance_ab": 0.03,
+      "is_distinct": false,
+      "sim_to_a": 1.0,
+      "sim_to_b": 0.9682,
+      "predicted_reading": "a",
+      "preferred_reading": "a",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_008",
+      "correct": false,
+      "expected": "b",
+      "distance_ab": -0.0,
+      "is_distinct": false,
+      "sim_to_a": -0.06,
+      "sim_to_b": -0.06,
+      "predicted_reading": "a",
+      "preferred_reading": "b",
+      "threshold": 0.15
+    },
+    {
+      "id": "amb_009",
+      "correct": false,
+      "expected": "a",
+      "distance_ab": 0.0014,
+      "is_distinct": false,
+      "sim_to_a": 0.9986,
+      "sim_to_b": 1.0,
+      "predicted_reading": "b",
+      "preferred_reading": "a",
+      "threshold": 0.15
+    }
+  ],
+  "notes": "",
+  "accuracy_pct": "0.00%"
+}

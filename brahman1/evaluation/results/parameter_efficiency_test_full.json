@@ -1,0 +1,239 @@
+{
+  "benchmark_name": "parameter_efficiency",
+  "model_name": "test_full",
+  "accuracy": 0.0,
+  "accuracy_ci": [
+    6.938893903907228e-18,
+    0.07134759913335872
+  ],
+  "n_examples": 50,
+  "n_correct": 0,
+  "per_type_accuracy": {
+    "linguistic": 0.0
+  },
+  "latency_ms": 58.236737499999975,
+  "examples": [
+    {
+      "id": "ling_000",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.889,
+        -10.881,
+        -10.907
+      ]
+    },
+    {
+      "id": "ling_001",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.877,
+        -10.859,
+        -10.864
+      ]
+    },
+    {
+      "id": "ling_002",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.856,
+        -10.832,
+        -10.841
+      ]
+    },
+    {
+      "id": "ling_003",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.857,
+        -10.846,
+        -10.85
+      ]
+    },
+    {
+      "id": "ling_004",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.811,
+        -10.784,
+        -10.803
+      ]
+    },
+    {
+      "id": "ling_005",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.889,
+        -10.881,
+        -10.907
+      ]
+    },
+    {
+      "id": "ling_006",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.877,
+        -10.859,
+        -10.864
+      ]
+    },
+    {
+      "id": "ling_007",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.856,
+        -10.832,
+        -10.841
+      ]
+    },
+    {
+      "id": "ling_008",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.857,
+        -10.846,
+        -10.85
+      ]
+    },
+    {
+      "id": "ling_009",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.811,
+        -10.784,
+        -10.803
+      ]
+    },
+    {
+      "id": "ling_010",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.889,
+        -10.881,
+        -10.907
+      ]
+    },
+    {
+      "id": "ling_011",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.877,
+        -10.859,
+        -10.864
+      ]
+    },
+    {
+      "id": "ling_012",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.856,
+        -10.832,
+        -10.841
+      ]
+    },
+    {
+      "id": "ling_013",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.857,
+        -10.846,
+        -10.85
+      ]
+    },
+    {
+      "id": "ling_014",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.811,
+        -10.784,
+        -10.803
+      ]
+    },
+    {
+      "id": "ling_015",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.889,
+        -10.881,
+        -10.907
+      ]
+    },
+    {
+      "id": "ling_016",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.877,
+        -10.859,
+        -10.864
+      ]
+    },
+    {
+      "id": "ling_017",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.856,
+        -10.832,
+        -10.841
+      ]
+    },
+    {
+      "id": "ling_018",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.857,
+        -10.846,
+        -10.85
+      ]
+    },
+    {
+      "id": "ling_019",
+      "correct": false,
+      "expected": "0",
+      "predicted": 1,
+      "scores": [
+        -10.811,
+        -10.784,
+        -10.803
+      ]
+    }
+  ],
+  "notes": "",
+  "accuracy_pct": "0.00%"
+}

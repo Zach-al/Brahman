@@ -1,0 +1,299 @@
+{
+  "benchmark_name": "compositionality",
+  "model_name": "test_full",
+  "accuracy": 0.43333333333333335,
+  "accuracy_ci": [
+    0.2737748557646652,
+    0.6080269299918639
+  ],
+  "n_examples": 30,
+  "n_correct": 13,
+  "per_type_accuracy": {
+    "tatpurusa": 0.43333333333333335
+  },
+  "latency_ms": 79.00396393333308,
+  "examples": [
+    {
+      "id": "comp_000",
+      "correct": true,
+      "expected": "2",
+      "predicted_idx": 2,
+      "correct_idx": 2,
+      "predicted_meaning": "wisdom as a lamp that illuminates darkness",
+      "scores": [
+        -10.865,
+        -10.842,
+        -10.835,
+        -10.877
+      ]
+    },
+    {
+      "id": "comp_001",
+      "correct": false,
+      "expected": "1",
+      "predicted_idx": 0,
+      "correct_idx": 1,
+      "predicted_meaning": "an indecisive person",
+      "scores": [
+        -10.868,
+        -10.88,
+        -10.891,
+        -10.873
+      ]
+    },
+    {
+      "id": "comp_002",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 1,
+      "correct_idx": 2,
+      "predicted_meaning": "a peaceful monk",
+      "scores": [
+        -10.845,
+        -10.843,
+        -10.88,
+        -10.861
+      ]
+    },
+    {
+      "id": "comp_003",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 1,
+      "correct_idx": 3,
+      "predicted_meaning": "an astronomer",
+      "scores": [
+        -10.902,
+        -10.845,
+        -10.867,
+        -10.858
+      ]
+    },
+    {
+      "id": "comp_004",
+      "correct": true,
+      "expected": "1",
+      "predicted_idx": 1,
+      "correct_idx": 1,
+      "predicted_meaning": "one whose eyes are like lotuses / beautiful eyes",
+      "scores": [
+        -10.879,
+        -10.866,
+        -10.889,
+        -10.874
+      ]
+    },
+    {
+      "id": "comp_005",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 1,
+      "correct_idx": 2,
+      "predicted_meaning": "a frozen river",
+      "scores": [
+        -10.875,
+        -10.835,
+        -10.87,
+        -10.847
+      ]
+    },
+    {
+      "id": "comp_006",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 1,
+      "correct_idx": 3,
+      "predicted_meaning": "a lion tamer",
+      "scores": [
+        -10.848,
+        -10.817,
+        -10.832,
+        -10.825
+      ]
+    },
+    {
+      "id": "comp_007",
+      "correct": true,
+      "expected": "1",
+      "predicted_idx": 1,
+      "correct_idx": 1,
+      "predicted_meaning": "fire of truth / that which burns away falsehood",
+      "scores": [
+        -10.891,
+        -10.851,
+        -10.891,
+        -10.873
+      ]
+    },
+    {
+      "id": "comp_008",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 1,
+      "correct_idx": 3,
+      "predicted_meaning": "a sword made of iron",
+      "scores": [
+        -10.857,
+        -10.845,
+        -10.845,
+        -10.854
+      ]
+    },
+    {
+      "id": "comp_009",
+      "correct": true,
+      "expected": "2",
+      "predicted_idx": 2,
+      "correct_idx": 2,
+      "predicted_meaning": "words as sharp as arrows / cutting speech",
+      "scores": [
+        -10.847,
+        -10.843,
+        -10.833,
+        -10.842
+      ]
+    },
+    {
+      "id": "comp_010",
+      "correct": true,
+      "expected": "2",
+      "predicted_idx": 2,
+      "correct_idx": 2,
+      "predicted_meaning": "the vast expanse of the mind / consciousness as deep as an o",
+      "scores": [
+        -10.855,
+        -10.859,
+        -10.851,
+        -10.855
+      ]
+    },
+    {
+      "id": "comp_011",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 1,
+      "correct_idx": 3,
+      "predicted_meaning": "a decorative wheel",
+      "scores": [
+        -10.869,
+        -10.833,
+        -10.841,
+        -10.865
+      ]
+    },
+    {
+      "id": "comp_012",
+      "correct": true,
+      "expected": "1",
+      "predicted_idx": 1,
+      "correct_idx": 1,
+      "predicted_meaning": "fire of truth / that which burns away falsehood",
+      "scores": [
+        -10.891,
+        -10.851,
+        -10.891,
+        -10.873
+      ]
+    },
+    {
+      "id": "comp_013",
+      "correct": true,
+      "expected": "2",
+      "predicted_idx": 2,
+      "correct_idx": 2,
+      "predicted_meaning": "the vast expanse of the mind / consciousness as deep as an o",
+      "scores": [
+        -10.855,
+        -10.859,
+        -10.851,
+        -10.855
+      ]
+    },
+    {
+      "id": "comp_014",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 1,
+      "correct_idx": 3,
+      "predicted_meaning": "a sword made of iron",
+      "scores": [
+        -10.857,
+        -10.845,
+        -10.845,
+        -10.854
+      ]
+    },
+    {
+      "id": "comp_015",
+      "correct": false,
+      "expected": "3",
+      "predicted_idx": 1,
+      "correct_idx": 3,
+      "predicted_meaning": "a lion tamer",
+      "scores": [
+        -10.848,
+        -10.817,
+        -10.832,
+        -10.825
+      ]
+    },
+    {
+      "id": "comp_016",
+      "correct": false,
+      "expected": "2",
+      "predicted_idx": 1,
+      "correct_idx": 2,
+      "predicted_meaning": "a frozen river",
+      "scores": [
+        -10.875,
+        -10.835,
+        -10.87,
+        -10.847
+      ]
+    },
+    {
+      "id": "comp_017",
+      "correct": true,
+      "expected": "1",
+      "predicted_idx": 1,
+      "correct_idx": 1,
+      "predicted_meaning": "fire of truth / that which burns away falsehood",
+      "scores": [
+        -10.891,
+        -10.851,
+        -10.891,
+        -10.873
+      ]
+    },
+    {
+      "id": "comp_018",
+      "correct": true,
+      "expected": "2",
+      "predicted_idx": 2,
+      "correct_idx": 2,
+      "predicted_meaning": "words as sharp as arrows / cutting speech",
+      "scores": [
+        -10.847,
+        -10.843,
+        -10.833,
+        -10.842
+      ]
+    },
+    {
+      "id": "comp_019",
+      "correct": true,
+      "expected": "1",
+      "predicted_idx": 1,
+      "correct_idx": 1,
+      "predicted_meaning": "fire of truth / that which burns away falsehood",
+      "scores": [
+        -10.891,
+        -10.851,
+        -10.891,
+        -10.873
+      ]
+    }
+  ],
+  "notes": "",
+  "accuracy_pct": "43.33%"
+}

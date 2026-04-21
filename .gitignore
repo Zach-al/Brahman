@@ -1,0 +1,25 @@
+# Virtual Environment
+venv/
+.env
+__pycache__/
+*.pyc
+
+# Data and Artifacts
+data/
+**/data/
+logs/
+**/logs/
+checkpoints/
+**/models/
+*.pth
+
+# IDE and OS files
+.DS_Store
+.vscode/
+.idea/
+.venv/
+venv/
+brahman1/.venv/
+checkpoints/
+*.pth
+__pycache__/

@@ -1,0 +1,226 @@
+{
+  "benchmark_name": "syllogistic_reasoning",
+  "model_name": "test_full",
+  "accuracy": 0.32,
+  "accuracy_ci": [
+    0.20758216260656845,
+    0.45810297308144077
+  ],
+  "n_examples": 50,
+  "n_correct": 16,
+  "per_type_accuracy": {
+    "modus_tollens": 0.0,
+    "disjunctive_syllogism": 0.0,
+    "modus_ponens": 0.0,
+    "universal_instantiation": 0.0,
+    "fallacy_affirming_consequent": 1.0,
+    "fallacy_denying_antecedent": 1.0,
+    "contradiction_detection": 0.0,
+    "hypothetical_syllogism": 0.0
+  },
+  "latency_ms": 29.505380020000022,
+  "examples": [
+    {
+      "id": "syl_0000",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "modus_tollens"
+    },
+    {
+      "id": "syl_0001",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "disjunctive_syllogism"
+    },
+    {
+      "id": "syl_0002",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "modus_tollens"
+    },
+    {
+      "id": "syl_0003",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "modus_ponens"
+    },
+    {
+      "id": "syl_0004",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "modus_ponens"
+    },
+    {
+      "id": "syl_0005",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "universal_instantiation"
+    },
+    {
+      "id": "syl_0006",
+      "correct": true,
+      "expected": "0",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "fallacy_affirming_consequent"
+    },
+    {
+      "id": "syl_0007",
+      "correct": true,
+      "expected": "0",
+      "predicted": 0,
+      "yes_score": 0.114,
+      "no_score": 0.233,
+      "alpha": 0.772,
+      "type": "fallacy_denying_antecedent"
+    },
+    {
+      "id": "syl_0008",
+      "correct": true,
+      "expected": "0",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "fallacy_denying_antecedent"
+    },
+    {
+      "id": "syl_0009",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "modus_tollens"
+    },
+    {
+      "id": "syl_0010",
+      "correct": true,
+      "expected": "0",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "fallacy_affirming_consequent"
+    },
+    {
+      "id": "syl_0011",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "modus_tollens"
+    },
+    {
+      "id": "syl_0012",
+      "correct": true,
+      "expected": "0",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "fallacy_affirming_consequent"
+    },
+    {
+      "id": "syl_0013",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "disjunctive_syllogism"
+    },
+    {
+      "id": "syl_0014",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "disjunctive_syllogism"
+    },
+    {
+      "id": "syl_0015",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "modus_tollens"
+    },
+    {
+      "id": "syl_0016",
+      "correct": true,
+      "expected": "0",
+      "predicted": 0,
+      "yes_score": 0.114,
+      "no_score": 0.233,
+      "alpha": 0.772,
+      "type": "fallacy_denying_antecedent"
+    },
+    {
+      "id": "syl_0017",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.114,
+      "no_score": 0.233,
+      "alpha": 0.772,
+      "type": "disjunctive_syllogism"
+    },
+    {
+      "id": "syl_0018",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "type": "modus_tollens"
+    },
+    {
+      "id": "syl_0019",
+      "correct": false,
+      "expected": "1",
+      "predicted": 0,
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.772,
+      "type": "disjunctive_syllogism"
+    }
+  ],
+  "notes": "",
+  "accuracy_pct": "32.00%"
+}

@@ -1,0 +1,226 @@
+{
+  "benchmark_name": "multistep_causal_reasoning",
+  "model_name": "test_full",
+  "accuracy": 0.275,
+  "accuracy_ci": [
+    0.16108016247667337,
+    0.42834955806210573
+  ],
+  "n_examples": 40,
+  "n_correct": 11,
+  "per_type_accuracy": {
+    "transitivity": 0.0,
+    "prevention": 1.0,
+    "simple_chain": 0.0,
+    "conditional_chain": 0.0,
+    "upstream_prevention": 1.0,
+    "direct_prevention": 1.0,
+    "prevention_does_not_retroact": 0.0,
+    "asymmetry": 1.0
+  },
+  "latency_ms": 24.35227495000003,
+  "examples": [
+    {
+      "id": "causal_0000",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "seed planting caused germination. germination caused harvest."
+    },
+    {
+      "id": "causal_0001",
+      "correct": true,
+      "expected": "no",
+      "predicted": "no",
+      "yes_score": 0.109,
+      "no_score": 0.234,
+      "alpha": 0.772,
+      "scenario": "rain caused flooding. flooding caused crop damage. drainage system prevented cro"
+    },
+    {
+      "id": "causal_0002",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "rain caused flooding. flooding caused crop damage."
+    },
+    {
+      "id": "causal_0003",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.109,
+      "no_score": 0.234,
+      "alpha": 0.772,
+      "scenario": "fire caused smoke. smoke caused evacuation."
+    },
+    {
+      "id": "causal_0004",
+      "correct": true,
+      "expected": "no",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "infection caused fever. fever caused weakness. medicine prevented weakness."
+    },
+    {
+      "id": "causal_0005",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.109,
+      "no_score": 0.234,
+      "alpha": 0.772,
+      "scenario": "teaching caused knowledge. knowledge caused wisdom."
+    },
+    {
+      "id": "causal_0006",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.235,
+      "alpha": 0.772,
+      "scenario": "If desire then action. If action then consequence. desire is true."
+    },
+    {
+      "id": "causal_0007",
+      "correct": true,
+      "expected": "no",
+      "predicted": "no",
+      "yes_score": 0.109,
+      "no_score": 0.234,
+      "alpha": 0.772,
+      "scenario": "seed planting caused germination. germination caused harvest. drought prevented "
+    },
+    {
+      "id": "causal_0008",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.235,
+      "alpha": 0.772,
+      "scenario": "If conflict then destruction. If destruction then suffering. conflict is true."
+    },
+    {
+      "id": "causal_0009",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.235,
+      "alpha": 0.772,
+      "scenario": "If seed planting then germination. If germination then harvest. seed planting is"
+    },
+    {
+      "id": "causal_0010",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "practice caused skill. skill caused mastery."
+    },
+    {
+      "id": "causal_0011",
+      "correct": true,
+      "expected": "no",
+      "predicted": "no",
+      "yes_score": 0.109,
+      "no_score": 0.234,
+      "alpha": 0.772,
+      "scenario": "fire caused smoke. smoke caused evacuation. fire extinguisher prevented evacuati"
+    },
+    {
+      "id": "causal_0012",
+      "correct": true,
+      "expected": "no",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "practice caused skill. injury prevented skill."
+    },
+    {
+      "id": "causal_0013",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "practice caused skill. skill caused mastery. injury prevented mastery."
+    },
+    {
+      "id": "causal_0014",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "investment caused profit. profit caused wealth."
+    },
+    {
+      "id": "causal_0015",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.109,
+      "no_score": 0.234,
+      "alpha": 0.772,
+      "scenario": "fire caused smoke. smoke caused evacuation."
+    },
+    {
+      "id": "causal_0016",
+      "correct": true,
+      "expected": "no",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "practice caused skill. injury prevented skill."
+    },
+    {
+      "id": "causal_0017",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.109,
+      "no_score": 0.234,
+      "alpha": 0.772,
+      "scenario": "fire caused smoke. smoke caused evacuation."
+    },
+    {
+      "id": "causal_0018",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.108,
+      "no_score": 0.236,
+      "alpha": 0.771,
+      "scenario": "seed planting caused germination. germination caused harvest."
+    },
+    {
+      "id": "causal_0019",
+      "correct": false,
+      "expected": "yes",
+      "predicted": "no",
+      "yes_score": 0.109,
+      "no_score": 0.234,
+      "alpha": 0.772,
+      "scenario": "If teaching then knowledge. If knowledge then wisdom. teaching is true."
+    }
+  ],
+  "notes": "",
+  "accuracy_pct": "27.50%"
+}
