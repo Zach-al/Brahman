@@ -170,10 +170,25 @@ class BrahmanModel(nn.Module):
 # TRAINING ENGINE
 # ==============================================================================
 def train_phase(model, train_dl, val_dl, phase, epochs, save_path):
+    # FOOLPROOF PARAMETER ISOLATION
+    encoder_params = []
+    task_head_params = []
+    custom_logic_params = []
+    
+    # Sort every single weight in the brain into exactly one bucket
+    for name, param in model.named_parameters():
+        if name.startswith("encoder."):
+            encoder_params.append(param)
+        elif name.startswith("task_head."):
+            task_head_params.append(param)
+        else:
+            custom_logic_params.append(param)
+
+    # Build the optimizer safely
     optimizer = torch.optim.AdamW([
-        {'params': model.encoder.parameters(), 'lr': Config.lr_encoder},
-        {'params': model.task_head.parameters(), 'lr': Config.lr_task_head},
-        {'params': [p for n, p in model.named_parameters() if 'panini' in n or 'attention' in n or 'confirmation' in n], 'lr': Config.lr_task_head}
+        {'params': encoder_params, 'lr': Config.lr_encoder},
+        {'params': task_head_params, 'lr': Config.lr_task_head},
+        {'params': custom_logic_params, 'lr': Config.lr_task_head}
     ])
     
     total_steps = len(train_dl) * epochs // Config.grad_accumulation
