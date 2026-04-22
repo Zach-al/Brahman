@@ -14,7 +14,7 @@ import collections
 # ==============================================================================
 class Config:
     data_path = "data/processed/training_data.jsonl"
-    srl_checkpoint = "models/pretrained_vibhakti/best_srl.pt" # Backup weights location
+    srl_checkpoint = "models/pretrained_vibhakti/best_srl.pt"
     srl_tokenizer_path = "models/pretrained_vibhakti"
     save_path = "brahman_best.pth"
     ablation_save_path = "brahman_ablation.pth"
@@ -42,7 +42,6 @@ class LogicDataset(Dataset):
         self.phase = phase
         
         filtered_examples = []
-        # OVERRIDE FIX: Allow all examples to pass through to prevent 0it validation bug
         for ex in examples:
             filtered_examples.append(ex)
                 
@@ -90,7 +89,7 @@ def load_examples(path, max_n=None):
     return examples
 
 # ==============================================================================
-# MODEL ARCHITECTURE (THE PANINIAN MASK)
+# MODEL ARCHITECTURE
 # ==============================================================================
 class BrahmanModel(nn.Module):
     def __init__(self, use_panini=True, srl_checkpoint=None):
@@ -170,13 +169,17 @@ class BrahmanModel(nn.Module):
 # TRAINING ENGINE
 # ==============================================================================
 def train_phase(model, train_dl, val_dl, phase, epochs, save_path):
-    # FOOLPROOF PARAMETER ISOLATION
+    # THE MEMORY TRACKER FIX: Guaranteed to block the PyTorch Crash
+    seen_params = set()
     encoder_params = []
     task_head_params = []
     custom_logic_params = []
     
-    # Sort every single weight in the brain into exactly one bucket
     for name, param in model.named_parameters():
+        if param in seen_params:
+            continue # Skip duplicate memory objects immediately
+        seen_params.add(param)
+        
         if name.startswith("encoder."):
             encoder_params.append(param)
         elif name.startswith("task_head."):
@@ -184,7 +187,6 @@ def train_phase(model, train_dl, val_dl, phase, epochs, save_path):
         else:
             custom_logic_params.append(param)
 
-    # Build the optimizer safely
     optimizer = torch.optim.AdamW([
         {'params': encoder_params, 'lr': Config.lr_encoder},
         {'params': task_head_params, 'lr': Config.lr_task_head},
@@ -274,7 +276,6 @@ def train(ablation_mode=False):
     print(f"BRAHMAN-1: {'Ablated Baseline' if ablation_mode else 'Full Engine'} Training")
     print("======================================================================")
 
-    # DEEP SHUFFLE FIX: Load all data and enforce a dynamic 90/10 split
     all_examples = load_examples(Config.data_path, max_n=60000)
     random.shuffle(all_examples) 
     
