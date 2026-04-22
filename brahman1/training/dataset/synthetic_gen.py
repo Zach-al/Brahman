@@ -1,158 +1,157 @@
-"""
-Generates synthetic training data using Pāṇini rule templates.
-This is critical for the logical entailment objective (weight=3.0).
-
-Types of synthetic data generated:
-  1. Syllogisms (modus ponens, modus tollens, hypothetical syllogism)
-  2. Causal chains (A→B→C inference)
-  3. Case-role manipulation (same event, different case framings)
-  4. Compound sentences with explicit logical operators
-"""
-
-import json, random, sys
+import json
+import random
 from pathlib import Path
-from typing import List, Dict, Tuple
-from datasets import Dataset
+import collections
 
-sys.path.insert(0, ".")
-PROC_DIR = Path("data/processed")
+AGENTS = ["Ram", "Sita", "the king", "the teacher", "the scholar", "the warrior", "the farmer", "the doctor", "the monk", "Arjuna", "Krishna"]
+PROPERTIES = ["mortal", "wise", "strong", "rational", "finite", "peaceful", "conscious", "ancient", "eternal", "skilled"]
+CAUSAL_EVENTS = ["fire spreads", "the river rises", "crops fail", "the bridge collapses", "disease spreads", "the army retreats"]
 
+def get_a_b():
+    props = random.sample(PROPERTIES, 2)
+    return props[0], props[1]
 
-# ─── Syllogism Templates ──────────────────────────────────────
+def generate_modus_ponens():
+    A, B = get_a_b()
+    X = random.choice(AGENTS)
+    return {
+        "form_type": "modus_ponens",
+        "premises": [f"All who are {A} are {B}.", f"{X} is {A}."],
+        "question": f"Is {X} {B}?",
+        "correct_answer": "Yes",
+        "is_valid": True,
+        "explanation": f"By Modus Ponens: All {A} are {B}, and {X} is {A}, so {X} must be {B}.",
+        "difficulty": 1
+    }
 
-ENTITY_CLASSES = [
-    ("human",    "mortal",      "Socrates"),
-    ("bird",     "animal",      "eagle"),
-    ("plant",    "living",      "oak"),
-    ("planet",   "spherical",   "Mars"),
-    ("river",    "flowing",     "Ganges"),
-    ("warrior",  "brave",       "Arjuna"),
-    ("scholar",  "learned",     "Pāṇini"),
-    ("king",     "powerful",    "Ashoka"),
-    ("sage",     "wise",        "Vyāsa"),
-    ("student",  "curious",     "Nālanda"),
-]
+def generate_modus_tollens():
+    A, B = get_a_b()
+    X = random.choice(AGENTS)
+    return {
+        "form_type": "modus_tollens",
+        "premises": [f"All who are {A} are {B}.", f"{X} is not {B}."],
+        "question": f"Is {X} {A}?",
+        "correct_answer": "No",
+        "is_valid": True,
+        "explanation": f"By Modus Tollens: All {A} are {B}. Since {X} is not {B}, {X} cannot be {A}.",
+        "difficulty": 2
+    }
 
-CAUSAL_CHAINS = [
-    ("rain",        "wet ground",   "mud",     "flooding"),
-    ("fire",        "smoke",        "alarm",   "evacuation"),
-    ("study",       "knowledge",    "wisdom",  "liberation"),
-    ("seed",        "sprout",       "tree",    "fruit"),
-    ("desire",      "action",       "result",  "consequence"),
-    ("ignorance",   "delusion",     "bondage", "suffering"),
-    ("practice",    "skill",        "mastery", "perfection"),
-]
+def generate_hypothetical_syllogism():
+    props = random.sample(PROPERTIES, 3)
+    A, B, C = props[0], props[1], props[2]
+    X = random.choice(AGENTS)
+    return {
+        "form_type": "hypothetical_syllogism",
+        "premises": [f"If {X} is {A}, then {X} is {B}.", f"If {X} is {B}, then {X} is {C}."],
+        "question": f"If {X} is {A}, is {X} {C}?",
+        "correct_answer": "Yes",
+        "is_valid": True,
+        "explanation": f"By Hypothetical Syllogism: The condition {A} leads to {B}, which leads to {C}.",
+        "difficulty": 2
+    }
 
+def generate_fallacy_affirming_consequent():
+    A, B = get_a_b()
+    X = random.choice(AGENTS)
+    return {
+        "form_type": "fallacy_affirming_consequent",
+        "premises": [f"All who are {A} are {B}.", f"{X} is {B}."],
+        "question": f"Is {X} definitely {A}?",
+        "correct_answer": "No",
+        "is_valid": False,
+        "explanation": f"Affirming the consequent fallacy: Being {B} does not guarantee being {A}, as other things might also be {B}.",
+        "difficulty": 3
+    }
 
-def generate_syllogisms(n: int = 3000) -> List[Dict]:
-    records = []
-    for _ in range(n):
-        cls_a, cls_b, inst = random.choice(ENTITY_CLASSES)
+def generate_fallacy_denying_antecedent():
+    A, B = get_a_b()
+    X = random.choice(AGENTS)
+    return {
+        "form_type": "fallacy_denying_antecedent",
+        "premises": [f"All who are {A} are {B}.", f"{X} is not {A}."],
+        "question": f"Is {X} definitely not {B}?",
+        "correct_answer": "No",
+        "is_valid": False,
+        "explanation": f"Denying the antecedent fallacy: Not being {A} does not mean {X} cannot be {B} through some other category.",
+        "difficulty": 3
+    }
 
-        # Modus Ponens: All A are B. x is A. ∴ x is B.
-        records.append({
-            "type":      "modus_ponens",
-            "premises":  [f"All {cls_a}s are {cls_b}.", f"{inst} is a {cls_a}."],
-            "conclusion": f"{inst} is {cls_b}.",
-            "label":     1,  # valid
-            "fol":       f"∀x({cls_a.upper()}(x)→{cls_b.upper()}(x)) ∧ {cls_a.upper()}({inst}) → {cls_b.upper()}({inst})",
-        })
+def generate_causal_example(subtype):
+    if subtype == "simple_chain":
+        events = random.sample(CAUSAL_EVENTS, 3)
+        e1, e2, e3 = events[0], events[1], events[2]
+        return {
+            "form_type": "simple_chain",
+            "premises": [f"If {e1}, then {e2}.", f"If {e2}, then {e3}.", f"{e1} happens."],
+            "question": f"Does {e3} happen?",
+            "correct_answer": "Yes",
+            "is_valid": True,
+            "explanation": f"Valid causal chain: {e1} triggers {e2}, which triggers {e3}.",
+            "difficulty": 2
+        }
+    elif subtype == "causal_prevention":
+        events = random.sample(CAUSAL_EVENTS, 2)
+        e1, e2 = events[0], events[1]
+        agent = random.choice(AGENTS)
+        return {
+            "form_type": "causal_prevention",
+            "premises": [f"If {e1}, then {e2}.", f"{agent} prevents {e1}."],
+            "question": f"Does {e2} happen as a result of {e1}?",
+            "correct_answer": "No",
+            "is_valid": True,
+            "explanation": f"Causal prevention: Since {e1} was prevented, it cannot cause {e2}.",
+            "difficulty": 2
+        }
+    else: # upstream_prevention
+        events = random.sample(CAUSAL_EVENTS, 3)
+        e1, e2, e3 = events[0], events[1], events[2]
+        agent = random.choice(AGENTS)
+        return {
+            "form_type": "upstream_prevention",
+            "premises": [f"If {e1}, then {e2}.", f"If {e2}, then {e3}.", f"{agent} prevents {e1}."],
+            "question": f"Does {e3} happen as a result of this chain?",
+            "correct_answer": "No",
+            "is_valid": True,
+            "explanation": f"Upstream prevention: Breaking the chain at {e1} prevents the subsequent effect {e3}.",
+            "difficulty": 3
+        }
 
-        # Modus Tollens: All A are B. x is not B. ∴ x is not A.
-        other_inst = random.choice([e[2] for e in ENTITY_CLASSES if e[2] != inst])
-        records.append({
-            "type":      "modus_tollens",
-            "premises":  [f"All {cls_a}s are {cls_b}.", f"{other_inst} is not {cls_b}."],
-            "conclusion": f"{other_inst} is not a {cls_a}.",
-            "label":     1,
-            "fol":       f"∀x({cls_a.upper()}(x)→{cls_b.upper()}(x)) ∧ ¬{cls_b.upper()}({other_inst}) → ¬{cls_a.upper()}({other_inst})",
-        })
-
-        # Invalid: All A are B. x is B. ∴ x is A.  (affirming the consequent — INVALID)
-        records.append({
-            "type":      "fallacy_affirming_consequent",
-            "premises":  [f"All {cls_a}s are {cls_b}.", f"{other_inst} is {cls_b}."],
-            "conclusion": f"{other_inst} is a {cls_a}.",
-            "label":     0,  # invalid
-            "fol":       f"∀x({cls_a.upper()}(x)→{cls_b.upper()}(x)) ∧ {cls_b.upper()}({other_inst}) → {cls_a.upper()}({other_inst})",
-        })
-
-        # Hypothetical Syllogism: A→B, B→C ∴ A→C
-        cls_c = random.choice(ENTITY_CLASSES)[1]
-        records.append({
-            "type":      "hypothetical_syllogism",
-            "premises":  [f"All {cls_a}s are {cls_b}.", f"All {cls_b}s are {cls_c}."],
-            "conclusion": f"All {cls_a}s are {cls_c}.",
-            "label":     1,
-            "fol":       f"∀x({cls_a.upper()}(x)→{cls_b.upper()}(x)) ∧ ∀x({cls_b.upper()}(x)→{cls_c.upper()}(x)) → ∀x({cls_a.upper()}(x)→{cls_c.upper()}(x))",
-        })
-
-    return records
-
-
-def generate_causal_chains(n: int = 1000) -> List[Dict]:
-    records = []
-    for _ in range(n):
-        a, b, c, d = random.choice(CAUSAL_CHAINS)
-
-        # Valid 3-step chain
-        records.append({
-            "type":      "causal_chain_3",
-            "premises":  [f"{a} causes {b}.", f"{b} causes {c}."],
-            "conclusion": f"{a} causes {c}.",
-            "label":     1,
-            "fol":       f"CAUSE({a},{b}) ∧ CAUSE({b},{c}) → CAUSE({a},{c})",
-        })
-
-        # Prevention breaks chain
-        records.append({
-            "type":      "prevention",
-            "premises":  [f"{a} causes {b}.", f"X prevents {b}."],
-            "conclusion": f"{a} no longer causes {c}.",
-            "label":     1,
-            "fol":       f"CAUSE({a},{b}) ∧ PREVENT(X,{b}) → ¬CAUSE({a},{c})",
-        })
-
-        # Invalid: reverse causation
-        records.append({
-            "type":      "reverse_causation",
-            "premises":  [f"{a} causes {b}.", f"{b} causes {c}."],
-            "conclusion": f"{c} causes {a}.",
-            "label":     0,
-            "fol":       f"CAUSE({a},{b}) ∧ CAUSE({b},{c}) → CAUSE({c},{a})",
-        })
-
-    return records
-
-
-def build_synthetic_dataset(n_syllogisms: int = 3000, n_causal: int = 1000) -> Dataset:
-    dest = PROC_DIR / "synthetic_logic.arrow"
-    if dest.exists():
-        print("  ✓ Synthetic logic dataset already built")
-        return Dataset.load_from_disk(str(dest))
-
-    print("  Generating synthetic logical reasoning dataset...")
-    records  = generate_syllogisms(n_syllogisms)
-    records += generate_causal_chains(n_causal)
-    random.shuffle(records)
-
-    # Convert premises list to string for dataset storage
-    for r in records:
-        r["premise_text"] = " ".join(r.pop("premises"))
-
-    ds = Dataset.from_list(records)
-    ds.save_to_disk(str(dest))
-    print(f"  ✓ Synthetic logic: {len(ds):,} examples ({n_syllogisms} syllogisms + {n_causal} causal)")
-    return ds
-
+def generate_full_dataset():
+    out_dir = Path("data/processed")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / "training_data.jsonl"
+    
+    with open(out_path, "w", encoding="utf-8") as f:
+        for _ in range(15000):
+            f.write(json.dumps(generate_modus_ponens()) + "\n")
+        for _ in range(8000):
+            f.write(json.dumps(generate_modus_tollens()) + "\n")
+        for _ in range(8000):
+            f.write(json.dumps(generate_hypothetical_syllogism()) + "\n")
+        for _ in range(7000):
+            f.write(json.dumps(generate_fallacy_affirming_consequent()) + "\n")
+        for _ in range(7000):
+            f.write(json.dumps(generate_fallacy_denying_antecedent()) + "\n")
+        
+        causal_types = ["simple_chain", "causal_prevention", "upstream_prevention"]
+        counts = [3334, 3333, 3333] # Total 10000
+        for i, count in enumerate(counts):
+            for _ in range(count):
+                f.write(json.dumps(generate_causal_example(causal_types[i])) + "\n")
+                
+    return str(out_path)
 
 if __name__ == "__main__":
-    ds = build_synthetic_dataset()
-    print(f"\nLabel distribution:")
-    labels = ds["label"]
-    print(f"  Valid (1):   {sum(labels):,}")
-    print(f"  Invalid (0): {len(labels)-sum(labels):,}")
-    print(f"\nType distribution:")
-    from collections import Counter
-    for t, c in Counter(ds["type"]).most_common():
-        print(f"  {t}: {c}")
+    path = generate_full_dataset()
+    with open(path) as f:
+        count = sum(1 for line in f)
+    print(f"VERIFICATION: {count} total examples written to {path}")
+    import json, collections
+    seen = collections.Counter()
+    with open(path) as f:
+        for line in f:
+            ex = json.loads(line)
+            seen[ex['form_type']] += 1
+    for k, v in sorted(seen.items()):
+        print(f"  {k}: {v}")
