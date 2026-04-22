@@ -63,13 +63,13 @@ class LogicDataset(Dataset):
             return_tensors="pt"
         )
         
-        label = 0 if ex["is_valid"] else 1
+        label = torch.tensor(0 if ex["is_valid"] else 1, dtype=torch.long)
         
         return {
             "input_ids": encoding["input_ids"].squeeze(0),
             "attention_mask": encoding["attention_mask"].squeeze(0),
-            "label": torch.tensor(label, dtype=torch.long),
-            "form_type": ex["form_type"]
+            "label": label,
+            "form_type": ex.get("form_type", "unknown"),
         }
 
 def load_examples(path, max_n=None):
@@ -197,26 +197,26 @@ def train_phase(model, train_dl, val_dl, phase, epochs, save_path):
         correct = 0
         total = 0
         per_type = collections.defaultdict(lambda: {"correct": 0, "total": 0})
-        
+
         with torch.no_grad():
             for batch in tqdm(val_dl, desc=f"Phase {phase} Epoch {epoch+1} Val"):
                 input_ids = batch["input_ids"].to(Config.device)
                 attention_mask = batch["attention_mask"].to(Config.device)
-                label = batch["label"].to(Config.device)
+                labels = batch["label"].to(Config.device)
                 form_types = batch["form_type"]
-                
+
                 outputs = model(input_ids, attention_mask)
-                task_logits = outputs["task_logits"]
-                preds = torch.argmax(task_logits, dim=-1)
-                
-                for p, l, ft in zip(preds, label, form_types):
-                    is_correct = (p == l).item()
-                    per_type[ft]["correct"] += is_correct
+                preds = outputs["task_logits"].argmax(dim=-1)
+
+                correct += (preds == labels).sum().item()
+                total += labels.size(0)
+
+                for i, ft in enumerate(form_types):
                     per_type[ft]["total"] += 1
-                    correct += is_correct
-                    total += 1
-                    
-        val_acc = correct / total if total > 0 else 0
+                    if preds[i].item() == labels[i].item():
+                        per_type[ft]["correct"] += 1
+
+        val_acc = correct / total if total > 0 else 0.0
         
         print(f"Phase {phase} Epoch {epoch+1}: train_loss={avg_train_loss:.4f} val_acc={val_acc:.4f}")
         for ft, stats in per_type.items():
