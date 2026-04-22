@@ -241,8 +241,11 @@ def train(ablation_mode=False):
 
     print("1. Loading data...")
     examples = load_examples(Config.data_path)
-    train_examples = examples[:45000]
-    val_examples = examples[-5000:]
+    random.shuffle(examples)
+    split = int(len(examples) * 0.9)
+    train_examples = examples[:split]
+    val_examples = examples[split:]
+    print(f"Data split: {len(train_examples)} train, {len(val_examples)} val")
 
     print("2. Loading tokenizer...")
     try:
