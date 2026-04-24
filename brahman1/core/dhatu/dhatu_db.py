@@ -226,7 +226,11 @@ def load_seed_data(conn: sqlite3.Connection):
         print(f"  ✓ Loaded {len(seeds)} curated dhātus")
     
     conn.commit()
-    print(f"\n📦 Total dhātus in database: {c.execute('SELECT COUNT(*) FROM dhatus').fetchone()[0]}")
+    count = conn.execute("SELECT COUNT(*) FROM dhatus").fetchone()[0]
+    if count == 0:
+        print("ERROR: No dhātus inserted. Check seed data format.")
+    else:
+        print(f"✓ {count} dhātus committed to database")
 
 class DhatuDB:
     """High-level interface to the dhātu database."""

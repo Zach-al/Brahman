@@ -110,13 +110,31 @@ class BrahmanModel(nn.Module):
         self.use_panini = use_panini
         self.encoder = RobertaModel.from_pretrained("roberta-base", add_pooling_layer=False)
         
-        if srl_checkpoint and Path(srl_checkpoint).exists():
-            state_dict = torch.load(srl_checkpoint, map_location="cpu", weights_only=True)
-            encoder_state_dict = {k.replace("roberta.", ""): v for k, v in state_dict.items() if k.startswith("roberta.")}
-            self.encoder.load_state_dict(encoder_state_dict, strict=False)
-            print("Loaded pre-trained SRL weights")
-        else:
-            print("Warning: no SRL checkpoint found, using base weights")
+        # Try multiple possible SRL paths
+        srl_candidates = [
+            srl_checkpoint,
+            "models/pretrained_vibhakti/best_srl.pt",
+            "/kaggle/working/Brahman/models/pretrained_vibhakti/best_srl.pt",
+        ]
+        srl_loaded = False
+        for candidate in srl_candidates:
+            if candidate and Path(candidate).exists():
+                try:
+                    state = torch.load(candidate, map_location="cpu")
+                    encoder_state = {
+                        k.replace("roberta.", ""): v
+                        for k, v in state.items()
+                        if k.startswith("roberta.")
+                    }
+                    if encoder_state:
+                        self.encoder.load_state_dict(encoder_state, strict=False)
+                        print(f"✓ SRL weights loaded from {candidate}")
+                        srl_loaded = True
+                        break
+                except Exception as e:
+                    continue
+        if not srl_loaded:
+            print(f"Warning: no SRL checkpoint found, using base weights")
 
         hidden = 768
 
