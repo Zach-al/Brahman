@@ -25,4 +25,7 @@ ENV TORCH_NUM_THREADS=8
 
 # Production server: Uvicorn workers
 # Railway sets PORT via env var, default 8000
+# Copy the nuclear entrypoint
+COPY run.py .
+
 CMD ["python", "run.py"]
