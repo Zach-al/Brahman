@@ -20,6 +20,9 @@ COPY tests/ ./tests/
 # Expose port
 EXPOSE 8000
 
-# Production server: Gunicorn with Uvicorn workers
+# Hardware optimization for 8 vCPUs
+ENV TORCH_NUM_THREADS=8
+
+# Production server: Uvicorn workers
 # Railway sets PORT via env var, default 8000
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 8
+CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT
