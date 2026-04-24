@@ -18,12 +18,12 @@ class Config:
     srl_tokenizer_path = "models/pretrained_vibhakti"
     save_path = "brahman_best.pth"
     ablation_save_path = "brahman_ablation.pth"
-    phase1_epochs = 5
-    phase2_epochs = 8
-    phase3_epochs = 12
-    early_stopping_patience = 8
+    phase1_epochs = 3
+    phase2_epochs = 5
+    phase3_epochs = 7
+    early_stopping_patience = 5
     lr_encoder = 1e-5
-    lr_task_head = 5e-5
+    lr_task_head = 3e-5
     batch_size = 32
     grad_accumulation = 4
     max_length = 256
@@ -42,7 +42,20 @@ class LogicDataset(Dataset):
         self.phase = phase
         
         filtered_examples = []
+        valid_forms_p1 = {
+            "modus_ponens", "modus_tollens", "hypothetical_syllogism",
+            "simple_chain", "disjunctive_syllogism"
+        }
+        valid_forms_p2 = valid_forms_p1.union({
+            "fallacy_affirming_consequent", "fallacy_denying_antecedent",
+            "contrapositive_fail", "causal_prevention"
+        })
         for ex in examples:
+            form = ex.get("form_type", "")
+            if phase == 1 and form not in valid_forms_p1:
+                continue
+            if phase == 2 and form not in valid_forms_p2:
+                continue
             filtered_examples.append(ex)
                 
         random.shuffle(filtered_examples)
@@ -64,12 +77,12 @@ class LogicDataset(Dataset):
             return_tensors="pt"
         )
         
-        label = 0 if ex.get("is_valid", False) else 1
+        label = torch.tensor(0 if ex["is_valid"] else 1, dtype=torch.long)
         
         return {
             "input_ids": encoded["input_ids"].squeeze(0),
             "attention_mask": encoded["attention_mask"].squeeze(0),
-            "label": torch.tensor(label, dtype=torch.long),
+            "label": label,
             "form_type": ex.get("form_type", "unknown")
         }
 
@@ -156,7 +169,9 @@ class BrahmanModel(nn.Module):
 
         loss = None
         if label is not None:
-            loss = nn.CrossEntropyLoss()(task_logits, label)
+            # Upweight INVALID class to fight VALID bias
+            class_weights = torch.tensor([1.0, 2.0, 1.0, 1.0]).to(task_logits.device)
+            loss = nn.CrossEntropyLoss(weight=class_weights, label_smoothing=0.1)(task_logits, label)
 
         return {
             "loss": loss,
