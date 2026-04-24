@@ -14,6 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY app/ ./app/
 
+# Generate the SQLite database natively during Docker build
+COPY ingestion_engine.py .
+RUN python -c "from ingestion_engine import BrahmanIngestion; BrahmanIngestion('app/data/brahman_v2.db').ingest_dhatupatha()"
+
 # Copy test suite
 COPY tests/ ./tests/
 
