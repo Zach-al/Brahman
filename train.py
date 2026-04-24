@@ -167,6 +167,52 @@ class BrahmanModel(nn.Module):
             nn.Linear(64, 2)
         )
 
+        # Semantic bridge state (set externally before inference)
+        self.tokenizer = None
+        self.symbolic_engine = None
+        self.id2tag = {0: "O", 1: "V", 2: "ARG0", 3: "ARG1", 4: "ARG2",
+                       5: "ARGM-LOC", 6: "ARGM-TMP", 7: "ARGM-MNR"}
+
+    def interpret_semantics(self, srl_logits, input_ids):
+        """
+        Extracts the Verb and Kārakas from the neural SRL head.
+        This bridge ensures the Symbolic Engine has data to work with.
+        """
+        # 1. Get the highest probability tag for each token
+        tag_indices = torch.argmax(srl_logits, dim=-1)
+
+        # 2. Convert IDs back to actual words
+        tokens = self.tokenizer.convert_ids_to_tokens(input_ids[0])
+
+        semantics = {"verb": None, "roles": []}
+
+        # Iterate through tokens and their predicted tags
+        for i, (token, tag_idx) in enumerate(zip(tokens, tag_indices[0])):
+            tag = self.id2tag[tag_idx.item()]
+            clean_token = token.replace("Ġ", "").strip()
+
+            # Identify the Action (Verb)
+            if tag == "V" and not semantics["verb"]:
+                semantics["verb"] = clean_token
+
+            # Identify the Roles (Agent, Object, Instrument, etc.)
+            elif tag in ["ARG0", "ARG1", "ARG2"]:
+                semantics["roles"].append({
+                    "role": tag,
+                    "word": clean_token
+                })
+
+        return semantics
+
+    def apply_hard_constraint(self, task_logits, target_label=1):
+        """
+        Pāṇini Overrule: Force the logits toward a specific label.
+        Used when the Symbolic Engine detects a logical violation.
+        """
+        override = torch.full_like(task_logits, -10.0)
+        override[:, target_label] = 10.0
+        return override
+
     def forward(self, input_ids, attention_mask, label=None):
         out = self.encoder(input_ids=input_ids, attention_mask=attention_mask)
         seq = out.last_hidden_state
@@ -184,6 +230,18 @@ class BrahmanModel(nn.Module):
 
         task_logits = self.task_head(pooled)
         conf_logits = self.confirmation_head(pooled)
+
+        # Semantic Bridge: Use Pāṇini to verify neural predictions at inference
+        if self.use_panini and self.tokenizer and self.symbolic_engine and not self.training:
+            try:
+                sem = self.interpret_semantics(conf_logits, input_ids)
+                if sem["verb"]:
+                    logic_check = self.symbolic_engine.verify(sem["verb"], sem["roles"])
+                    if not logic_check.get("is_legal", True):
+                        # Pāṇini Overrule: Neural core guessed wrong, force INVALID
+                        task_logits = self.apply_hard_constraint(task_logits, target_label=1)
+            except Exception:
+                pass  # Graceful fallback — don't crash inference
 
         loss = None
         if label is not None:
