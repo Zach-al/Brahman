@@ -1,0 +1,24 @@
+# Brahman-2.0 Task List
+
+- `[x]` **Priority 1: The Hard-Coded Rule Engine (Symbolic Core)**
+  - `[x]` Implement robust Vibhakti declension generation logic (handle more types than just masculine a-stems, or at least structure the table to handle the basic test sentence perfectly).
+  - `[x]` Implement comprehensive Sandhi rules (Svara, Vyañjana, Visarga) required to parse standard texts.
+  - `[x]` Refactor `parse` and `segment_word` so the core logic correctly and deterministically parses "रामः वनं गच्छति" by mapping roots and affixes.
+- `[x]` **Priority 2: The Translation Bridge (Neural Adapter)**
+  - `[x]` Initialize `neural_bridge.py` using Hugging Face's `distilbert-base-multilingual-cased`.
+  - `[x]` Setup Siamese network with `root_head` and `karaka_head` on MPS.
+- `[x]` **Priority 3: Dhātu & Corpus Expansion**
+  - `[x]` Implement SQLite database structure (`brahman_v2.db`) in `SanskritCorpusLoader` / `ingestion_engine.py`.
+  - `[x]` Write script to fetch and process pre-compiled structured Dhātupāṭha data (dhaval2785 format) from dhaatugana.txt.
+  - `[x]` Implement the final Kāraka Feedback Loop to verify neural predictions against symbolic case boundaries.
+- `[x]` **Priority 4: The Semantic Reasoning Arena**
+  - `[x]` Implement `reasoning_engine.py` using the Anvaya-Bodha algorithm.
+  - `[x]` Integrate Ākāṅkṣā (Expectancy) and structural verification logic.
+  - `[x]` Modify symbolic engine to support state superposition and collapse logic for ambiguous morphology.
+- `[x]` **Priority 5: The "Golden Path" Synthetic Trainer**
+  - `[x]` Create `golden_trainer.py` to generate 10,000 synthetic SOV sentences from SQLite.
+  - `[x]` Implement PyTorch training loop for `KarakaBridge` applying a 10x Constraint-Violation Loss penalty.
+  - `[x]` Train on MPS until the Linguistic Violation rate drops below 1%, and save `brahman_v2_core.pth`.
+- `[x]` **Priority 6: The "Universal Logic" Stress Test**
+  - `[x]` Create `final_benchmark.py` testing Equivocation, Long-Distance Dependency, and Impossible Proofs.
+  - `[x]` Compare `brahman_v2_core.pth` against an untrained baseline and output the final structural validation report.

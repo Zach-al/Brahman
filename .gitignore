@@ -4,22 +4,20 @@ venv/
 __pycache__/
 *.pyc
 
-# Data and Artifacts
-data/
-**/data/
-logs/
-**/logs/
-checkpoints/
-**/models/
-*.pth
-
 # IDE and OS files
 .DS_Store
 .vscode/
 .idea/
 .venv/
-venv/
-brahman1/.venv/
+
+# Research artifacts (not for production)
+logs/
 checkpoints/
-*.pth
-__pycache__/
+brahman1/.venv/
+
+# Large model weights (use Git LFS or download at build time)
+# Uncomment the line below if the .pth file is too large for your git remote
+# app/data/brahman_v2_core.pth
+
+# Local dev data (the production copy lives in app/data/)
+data/
