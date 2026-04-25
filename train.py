@@ -237,23 +237,32 @@ class BrahmanModel(nn.Module):
                 try:
                     sem = self.interpret_semantics(conf_logits, input_ids)
                     if sem["verb"]:
-                        # SRL extracted a verb — run the symbolic verification
+                        # SRL extracted something — but is it a REAL Dhātu root?
                         logic_check = self.symbolic_engine.verify(sem["verb"], sem["roles"])
-                        if not logic_check.get("is_legal", True):
-                            # Pāṇini Overrule: Neural core guessed wrong, force INVALID
+                        dhatu_found = logic_check.get("dhatu_found", False)
+
+                        if not dhatu_found:
+                            # DB CIRCUIT BREAKER: The extracted word is garbage
+                            # (e.g., "not", "is", "the") — DB doesn't recognize it
+                            # DO NOT let neural net take over. Force AMBIGUOUS.
+                            panic_logits = torch.tensor(
+                                [[-100.0, -100.0, 100.0, -100.0]],
+                                device=input_ids.device
+                            )
+                            task_logits = panic_logits.expand(input_ids.size(0), -1)
+                        elif not logic_check.get("is_legal", True):
+                            # Dhātu found but structure is illegal → force INVALID
                             task_logits = self.apply_hard_constraint(task_logits, target_label=1)
+                        # else: Dhātu found AND legal → trust the neural logits
                     else:
-                        # THE FAILSAFE CIRCUIT BREAKER
-                        # SRL failed to extract a verb — model has NO data for logic
-                        # Force AMBIGUOUS (Label 2) instead of blind VALID guess
+                        # SRL returned nothing at all → force AMBIGUOUS
                         panic_logits = torch.tensor(
                             [[-100.0, -100.0, 100.0, -100.0]],
                             device=input_ids.device
                         )
-                        batch_size = input_ids.size(0)
-                        task_logits = panic_logits.expand(batch_size, -1)
+                        task_logits = panic_logits.expand(input_ids.size(0), -1)
                 except Exception:
-                    # Graceful fallback — if bridge itself crashes, force AMBIGUOUS
+                    # Bridge crashed → force AMBIGUOUS
                     panic_logits = torch.tensor(
                         [[-100.0, -100.0, 100.0, -100.0]],
                         device=input_ids.device
