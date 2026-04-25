@@ -14,6 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the app and the smart entrypoint
 COPY app/ ./app/
+COPY ingestion_engine.py .
 COPY run.py .
 
 CMD ["python", "run.py"]

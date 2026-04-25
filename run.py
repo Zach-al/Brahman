@@ -25,7 +25,16 @@ def bootstrap_brain():
     # 2. Check and generate Database
     if not DB_PATH.exists():
         print(f"⚠️ SQLite DB missing. Generating Dhātupāṭha at {DB_PATH}...")
-        subprocess.run(["python", "app/ingestion_engine.py"], check=True)
+        # Use absolute path based on run.py's location
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        ingestion_script = os.path.join(base_dir, "ingestion_engine.py")
+        # Pass the correct DB path so it writes where the app expects
+        subprocess.run([
+            "python", "-c",
+            f"import sys; sys.path.insert(0,'{base_dir}'); "
+            f"from ingestion_engine import BrahmanIngestion; "
+            f"b = BrahmanIngestion('{DB_PATH}'); b.ingest_dhatupatha(); b.close()"
+        ], check=True)
         print("✅ Database generated successfully.")
     else:
         print("✅ Database found on disk.")
