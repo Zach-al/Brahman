@@ -232,16 +232,33 @@ class BrahmanModel(nn.Module):
         conf_logits = self.confirmation_head(pooled)
 
         # Semantic Bridge: Use Pāṇini to verify neural predictions at inference
-        if self.use_panini and self.tokenizer and self.symbolic_engine and not self.training:
-            try:
-                sem = self.interpret_semantics(conf_logits, input_ids)
-                if sem["verb"]:
-                    logic_check = self.symbolic_engine.verify(sem["verb"], sem["roles"])
-                    if not logic_check.get("is_legal", True):
-                        # Pāṇini Overrule: Neural core guessed wrong, force INVALID
-                        task_logits = self.apply_hard_constraint(task_logits, target_label=1)
-            except Exception:
-                pass  # Graceful fallback — don't crash inference
+        if self.use_panini and not self.training:
+            if self.tokenizer and self.symbolic_engine:
+                try:
+                    sem = self.interpret_semantics(conf_logits, input_ids)
+                    if sem["verb"]:
+                        # SRL extracted a verb — run the symbolic verification
+                        logic_check = self.symbolic_engine.verify(sem["verb"], sem["roles"])
+                        if not logic_check.get("is_legal", True):
+                            # Pāṇini Overrule: Neural core guessed wrong, force INVALID
+                            task_logits = self.apply_hard_constraint(task_logits, target_label=1)
+                    else:
+                        # THE FAILSAFE CIRCUIT BREAKER
+                        # SRL failed to extract a verb — model has NO data for logic
+                        # Force AMBIGUOUS (Label 2) instead of blind VALID guess
+                        panic_logits = torch.tensor(
+                            [[-100.0, -100.0, 100.0, -100.0]],
+                            device=input_ids.device
+                        )
+                        batch_size = input_ids.size(0)
+                        task_logits = panic_logits.expand(batch_size, -1)
+                except Exception:
+                    # Graceful fallback — if bridge itself crashes, force AMBIGUOUS
+                    panic_logits = torch.tensor(
+                        [[-100.0, -100.0, 100.0, -100.0]],
+                        device=input_ids.device
+                    )
+                    task_logits = panic_logits.expand(input_ids.size(0), -1)
 
         loss = None
         if label is not None:

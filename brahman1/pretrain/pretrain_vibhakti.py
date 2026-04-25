@@ -22,6 +22,12 @@ def generate_srl_examples(n=50000):
     times = ["at dawn", "at night", "in the morning", "long ago", "immediately", "always", "in winter", "yesterday"]
     causes = ["hunger", "fear", "wisdom", "duty", "love", "anger", "necessity", "courage"]
     verbs = ["taught", "struck", "helped", "protected", "found", "read", "carried", "sent", "defeated", "created"]
+    # Complex grammar vocabulary
+    passive_verbs = ["was taught", "was struck", "was helped", "was protected", "was found", "was carried", "was sent", "was defeated"]
+    neg_verbs = ["did not teach", "did not strike", "did not help", "did not protect", "did not find", "did not carry", "did not send"]
+    conditional_verbs = ["rains", "breaks", "flows", "burns", "melts", "falls", "rises", "grows"]
+    abstract_subjects = ["all mortals", "all warriors", "all scholars", "all humans", "every king"]
+    abstract_predicates = ["are brave", "are mortal", "are wise", "are strong", "are feared"]
 
     examples = []
     
@@ -29,7 +35,7 @@ def generate_srl_examples(n=50000):
         return [label_type] * len(phrase.split())
 
     for _ in range(n):
-        template = random.randint(1, 8)
+        template = random.randint(1, 18)
         
         agent = random.choice(agents)
         verb = random.choice(verbs)
@@ -79,6 +85,69 @@ def generate_srl_examples(n=50000):
             location = random.choice(locations)
             tokens = agent.split() + verb.split() + patient.split() + ["in"] + location.split() + ["."]
             labels = get_phrase_labels(agent, "AGENT") + get_phrase_labels(verb, "V") + get_phrase_labels(patient, "PATIENT") + ["O"] + get_phrase_labels(location, "LOCATION") + ["O"]
+
+        # ── COMPLEX GRAMMAR TEMPLATES (9-18) ─────────────────────────
+        elif template == 9:
+            # PASSIVE: "The book was read by the scholar."
+            patient = random.choice(patients)
+            pv = random.choice(passive_verbs)
+            tokens = patient.split() + pv.split() + ["by"] + agent.split() + ["."]
+            labels = get_phrase_labels(patient, "PATIENT") + get_phrase_labels(pv, "V") + ["O"] + get_phrase_labels(agent, "AGENT") + ["O"]
+
+        elif template == 10:
+            # NEGATION: "The king did not protect the village."
+            nv = random.choice(neg_verbs)
+            patient = random.choice(patients)
+            tokens = agent.split() + nv.split() + patient.split() + ["."]
+            labels = get_phrase_labels(agent, "AGENT") + get_phrase_labels(nv, "V") + get_phrase_labels(patient, "PATIENT") + ["O"]
+
+        elif template == 11:
+            # CONDITIONAL: "If it rains , the ground becomes wet ."
+            cv = random.choice(conditional_verbs)
+            patient = random.choice(patients)
+            tokens = ["If", "it"] + [cv] + [","] + patient.split() + ["becomes", "wet", "."]
+            labels = ["O", "AGENT"] + ["V"] + ["O"] + get_phrase_labels(patient, "PATIENT") + ["V", "O", "O"]
+
+        elif template == 12:
+            # DOUBLE NEGATION: "Ram is not not a warrior."
+            tokens = agent.split() + ["is", "not", "not", "a", "warrior", "."]
+            labels = get_phrase_labels(agent, "AGENT") + ["V", "O", "O", "O", "PATIENT", "O"]
+
+        elif template == 13:
+            # CAUSATIVE: "The king caused the warrior to protect the village."
+            agent2 = random.choice(agents)
+            patient = random.choice(patients)
+            tokens = agent.split() + ["caused"] + agent2.split() + ["to", verb] + patient.split() + ["."]
+            labels = get_phrase_labels(agent, "AGENT") + ["V"] + get_phrase_labels(agent2, "INSTRUMENT") + ["O", "V"] + get_phrase_labels(patient, "PATIENT") + ["O"]
+
+        elif template == 14:
+            # UNIVERSAL: "All mortals are brave ."
+            subj = random.choice(abstract_subjects)
+            pred = random.choice(abstract_predicates)
+            tokens = subj.split() + pred.split() + ["."]
+            labels = get_phrase_labels(subj, "AGENT") + get_phrase_labels(pred, "V") + ["O"]
+
+        elif template == 15:
+            # MODUS PONENS: "All humans are mortal . Socrates is human ."
+            subj = random.choice(abstract_subjects)
+            pred = random.choice(abstract_predicates)
+            tokens = subj.split() + pred.split() + ["."] + agent.split() + ["is", "human", "."]
+            labels = get_phrase_labels(subj, "AGENT") + get_phrase_labels(pred, "V") + ["O"] + get_phrase_labels(agent, "AGENT") + ["V", "PATIENT", "O"]
+
+        elif template == 16:
+            # DISJUNCTION: "Either famine or war was the cause ."
+            tokens = ["Either", "famine", "or", "war"] + ["was"] + ["the", "cause", "."]
+            labels = ["O", "AGENT", "O", "AGENT"] + ["V"] + ["O", "PATIENT", "O"]
+
+        elif template == 17:
+            # CAUSAL CHAIN: "Fire causes smoke . Smoke causes evacuation ."
+            tokens = ["Fire", "causes", "smoke", "."] + ["Smoke", "causes", "evacuation", "."]
+            labels = ["AGENT", "V", "PATIENT", "O"] + ["AGENT", "V", "PATIENT", "O"]
+
+        elif template == 18:
+            # PREVENTION: "Rain prevents fire . It rained today ."
+            tokens = ["Rain", "prevents", "fire", "."] + ["It", "rained", "today", "."]
+            labels = ["AGENT", "V", "PATIENT", "O"] + ["AGENT", "V", "TIME", "O"]
 
         sentence = " ".join(tokens)
         examples.append({
