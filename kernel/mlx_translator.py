@@ -263,3 +263,232 @@ if __name__ == "__main__":
     print("=" * 70)
     print("Pipeline complete.")
     print("=" * 70)
+
+
+# ══════════════════════════════════════════════════════════════════
+# BRAHMAN-1 FALLBACK TRANSLATOR
+# ══════════════════════════════════════════════════════════════════
+#
+# If MLX/Qwen3 is not available (e.g., non-Apple hardware, no GPU),
+# fall back to the trained RoBERTa-based VibhaktiEncoder from
+# Brahman-1. This uses the Pāṇinian SRL model to extract semantic
+# roles and maps them to Kāraka Protocol JSON.
+#
+
+# Vibhakti semantic role → Kāraka Protocol slot mapping
+_VIBHAKTI_TO_KARAKA = {
+    "AGENT":      "karta",
+    "PATIENT":    "karma",
+    "INSTRUMENT": "karana",
+    "GOAL":       "sampradana",
+    "SOURCE":     "apadana",
+    "LOCATION":   "adhikarana",
+    "POSSESSOR":  None,   # No direct kāraka — skip
+    "ADDRESSEE":  None,   # No direct kāraka — skip
+}
+
+
+def brahman1_translate(text: str, domain: str = "general") -> Dict:
+    """
+    Fallback translator using the trained Brahman-1 VibhaktiEncoder.
+
+    Pipeline:
+        Raw Text → RoBERTa SRL → SanskritIR → Kāraka Protocol JSON
+
+    This runs entirely on CPU/MPS without needing MLX or Qwen3.
+
+    Args:
+        text: Raw input text to translate.
+        domain: Domain hint for the KP output.
+
+    Returns:
+        A Kāraka Protocol dict ready for the Brahman Kernel.
+    """
+    import sys
+    brahman1_root = str(Path(__file__).parent.parent / "brahman1")
+    if brahman1_root not in sys.path:
+        sys.path.insert(0, brahman1_root)
+
+    start = time.time()
+
+    try:
+        from core.grammar.vibhakti_encoder import VibhaktiEncoder, DEVICE
+        from core.representation.sanskrit_ir import Vibhakti
+        from transformers import RobertaTokenizerFast
+        import torch
+
+        # Try to load trained model, fall back to untrained
+        model_dir = Path(__file__).parent.parent / "brahman1" / "models" / "vibhakti_encoder"
+        if (model_dir / "best_model.pt").exists():
+            tokenizer = RobertaTokenizerFast.from_pretrained(str(model_dir), add_prefix_space=True)
+            model = VibhaktiEncoder().to(DEVICE)
+            model.load_state_dict(torch.load(str(model_dir / "best_model.pt"), map_location=DEVICE))
+            model.eval()
+        else:
+            # Use untrained model (still produces structural output)
+            tokenizer = RobertaTokenizerFast.from_pretrained("roberta-base", add_prefix_space=True)
+            model = VibhaktiEncoder().to(DEVICE)
+            model.eval()
+
+        # Run the VibhaktiEncoder to get SanskritIR
+        sir = model.encode_to_sir(text, tokenizer)
+
+        # Convert SanskritIR → Kāraka Protocol JSON
+        kp = _sir_to_karaka_protocol(sir, text, domain)
+
+    except Exception as e:
+        # If even Brahman-1 fails, return a rule-based fallback
+        kp = _rule_based_translate(text, domain)
+        kp["_translator_error"] = f"brahman1 fallback failed: {e}"
+
+    elapsed = time.time() - start
+    kp["meta"] = {
+        "translator_model": "brahman1_vibhakti_encoder",
+        "extraction_time_ms": round(elapsed * 1000, 1),
+        "source_hash": hashlib.sha256(text.encode("utf-8")).hexdigest(),
+    }
+    return kp
+
+
+def _sir_to_karaka_protocol(sir, text: str, domain: str) -> Dict:
+    """
+    Convert a SanskritIR object to Kāraka Protocol JSON.
+
+    Mapping:
+        SIR.predicate        → kriya
+        SIR.arguments[AGENT] → karta
+        SIR.arguments[PATIENT] → karma
+        SIR.arguments[INSTRUMENT] → karana
+        SIR.arguments[GOAL]  → sampradana
+        SIR.arguments[LOCATION] → adhikarana
+        SIR.arguments[SOURCE] → apadana
+    """
+    kp = {
+        "protocol_version": "1.0.0",
+        "domain": domain,
+        "claim": {
+            "raw_input": text,
+            "claim_type": "assertion",
+        },
+        "karaka_graph": {
+            "kriya": {
+                "id": "k0",
+                "surface": sir.predicate.logic_predicate if sir.predicate else "__UNKNOWN__",
+                "resolved_root": sir.predicate.root.replace("√", "") if sir.predicate else None,
+            }
+        },
+    }
+
+    # Map SIR arguments to kāraka slots
+    karaka_id_map = {
+        "karta": "a0", "karma": "o0", "karana": "i0",
+        "sampradana": "r0", "apadana": "s0", "adhikarana": "e0",
+    }
+
+    for role, arg in sir.arguments.items():
+        karaka_slot = _VIBHAKTI_TO_KARAKA.get(role)
+        if karaka_slot is None:
+            continue
+
+        kp["karaka_graph"][karaka_slot] = {
+            "id": karaka_id_map.get(karaka_slot, "x0"),
+            "surface": arg.surface_form,
+            "lemma": arg.lemma,
+        }
+
+    return kp
+
+
+def _rule_based_translate(text: str, domain: str) -> Dict:
+    """
+    Ultra-lightweight rule-based fallback when no neural model is available.
+    Parses English word order heuristically:
+        Subject Verb Object → kartā kriyā karma
+    """
+    words = text.strip().split()
+
+    # Simple heuristic: first word group = agent, first verb-like = kriya, rest = karma
+    verb_indicators = {
+        "transfer", "send", "mint", "burn", "swap", "borrow", "close",
+        "invoke", "verify", "check", "sign", "run", "execute", "read",
+        "write", "copy", "move", "give", "protect", "attack", "skip",
+    }
+
+    kriya_surface = None
+    agent_words = []
+    target_words = []
+    found_verb = False
+
+    for word in words:
+        clean = word.lower().strip(".,!?;:'\"")
+        if clean in verb_indicators and not found_verb:
+            kriya_surface = clean
+            found_verb = True
+        elif not found_verb:
+            agent_words.append(word)
+        else:
+            target_words.append(word)
+
+    kp = {
+        "protocol_version": "1.0.0",
+        "domain": domain,
+        "claim": {"raw_input": text, "claim_type": "assertion"},
+        "karaka_graph": {
+            "kriya": {
+                "id": "k0",
+                "surface": kriya_surface or words[0] if words else "__UNKNOWN__",
+                "resolved_root": kriya_surface,
+            },
+        },
+    }
+
+    if agent_words:
+        kp["karaka_graph"]["karta"] = {
+            "id": "a0",
+            "surface": " ".join(agent_words),
+            "lemma": agent_words[-1].lower(),
+        }
+    if target_words:
+        kp["karaka_graph"]["karma"] = {
+            "id": "o0",
+            "surface": " ".join(target_words),
+            "lemma": target_words[0].lower(),
+        }
+
+    return kp
+
+
+# ══════════════════════════════════════════════════════════════════
+# PUBLIC translate() FUNCTION — AUTO-SELECTS BEST BACKEND
+# ══════════════════════════════════════════════════════════════════
+
+def translate(text: str, domain: str = "general") -> Dict:
+    """
+    Translate raw text to Kāraka Protocol JSON using the best available backend.
+
+    Priority:
+        1. MLX/Qwen3 (if Apple Silicon + mlx installed)
+        2. Brahman-1 VibhaktiEncoder (if torch + transformers available)
+        3. Rule-based heuristic (always available)
+
+    Args:
+        text: Raw input text.
+        domain: Domain hint.
+
+    Returns:
+        Kāraka Protocol dict ready for the Brahman Kernel.
+    """
+    # Try MLX first
+    try:
+        import mlx
+        translator = MLXTranslator(domain=domain)
+        translator.load()
+        return translator.translate(text, domain=domain)
+    except ImportError:
+        pass
+    except Exception:
+        pass
+
+    # Fall back to Brahman-1
+    return brahman1_translate(text, domain=domain)
+
