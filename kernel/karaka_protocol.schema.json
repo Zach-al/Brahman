@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://brahman.dev/schemas/karaka-protocol/v1.0.0",
+  "title": "Universal Kāraka Protocol v1.0.0",
+  "description": "Domain-agnostic intermediate representation for the Brahman Verification Kernel. Every problem — Sanskrit, cybersecurity, molecular chemistry, smart contracts — must be translated into this structure before hitting the Verifier.",
+
+  "type": "object",
+  "required": ["protocol_version", "domain", "claim", "karaka_graph"],
+
+  "properties": {
+    "protocol_version": {
+      "const": "1.0.0",
+      "description": "Semantic version of the Kāraka Protocol."
+    },
+
+    "domain": {
+      "type": "string",
+      "description": "The loaded Sūtra cartridge domain (e.g., 'sanskrit', 'solidity', 'thermodynamics', 'rust_crypto')."
+    },
+
+    "claim": {
+      "type": "object",
+      "description": "The proposition being verified — the statement the neural translator extracted from raw input.",
+      "required": ["raw_input", "claim_type"],
+      "properties": {
+        "raw_input": {
+          "type": "string",
+          "description": "The original unprocessed input (sentence, code snippet, molecular formula, etc.)."
+        },
+        "claim_type": {
+          "type": "string",
+          "enum": ["assertion", "implication", "negation", "conditional", "universal", "existential"],
+          "description": "The logical form of the claim."
+        },
+        "confidence": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "description": "Neural translator's confidence in the extraction."
+        }
+      }
+    },
+
+    "karaka_graph": {
+      "type": "object",
+      "description": "The universal semantic graph. Every domain maps to exactly these six roles.",
+      "required": ["kriya"],
+      "properties": {
+
+        "kriya": {
+          "type": "object",
+          "description": "The ACTION — the central verb/operation/transformation. Everything else orbits this.",
+          "required": ["id", "surface", "resolved_root"],
+          "properties": {
+            "id":            { "type": "string" },
+            "surface":       { "type": "string", "description": "The raw token as it appeared in input." },
+            "resolved_root": { "type": ["string", "null"], "description": "The canonical root form from the Sūtra cartridge DB. null = DB miss → AMBIGUOUS." },
+            "root_class":    { "type": ["string", "null"], "description": "Classification within the domain (e.g., gaṇa for Sanskrit, opcode class for Solidity)." },
+            "transitivity":  { "type": "string", "enum": ["transitive", "intransitive", "ditransitive", "unknown"] }
+          }
+        },
+
+        "karta": {
+          "type": ["object", "null"],
+          "description": "The AGENT — who/what initiates the action.",
+          "properties": {
+            "id":      { "type": "string" },
+            "surface": { "type": "string" },
+            "lemma":   { "type": "string", "description": "Canonical/normalized form." },
+            "constraints": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/constraint" },
+              "description": "Domain-specific constraints on this agent (e.g., must be animate, must have admin role)."
+            }
+          }
+        },
+
+        "karma": {
+          "type": ["object", "null"],
+          "description": "The TARGET — what is being acted upon.",
+          "properties": {
+            "id":      { "type": "string" },
+            "surface": { "type": "string" },
+            "lemma":   { "type": "string" },
+            "constraints": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/constraint" }
+            }
+          }
+        },
+
+        "karana": {
+          "type": ["object", "null"],
+          "description": "The INSTRUMENT — the mechanism, tool, or energy used to perform the action.",
+          "properties": {
+            "id":      { "type": "string" },
+            "surface": { "type": "string" },
+            "lemma":   { "type": "string" },
+            "constraints": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/constraint" }
+            }
+          }
+        },
+
+        "sampradana": {
+          "type": ["object", "null"],
+          "description": "The RECIPIENT — the beneficiary or destination of the action.",
+          "properties": {
+            "id":      { "type": "string" },
+            "surface": { "type": "string" },
+            "lemma":   { "type": "string" },
+            "constraints": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/constraint" }
+            }
+          }
+        },
+
+        "adhikarana": {
+          "type": ["object", "null"],
+          "description": "The ENVIRONMENT — the boundary conditions, context, or locus where the action occurs.",
+          "properties": {
+            "id":      { "type": "string" },
+            "surface": { "type": "string" },
+            "lemma":   { "type": "string" },
+            "conditions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "description": "Environmental constraints (e.g., 'temperature < 100C', 'network == mainnet', 'lakaara == lat')."
+            }
+          }
+        },
+
+        "apadana": {
+          "type": ["object", "null"],
+          "description": "The SOURCE — the origin point from which something separates.",
+          "properties": {
+            "id":      { "type": "string" },
+            "surface": { "type": "string" },
+            "lemma":   { "type": "string" },
+            "constraints": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/constraint" }
+            }
+          }
+        }
+      }
+    },
+
+    "sutra_cartridge": {
+      "type": "string",
+      "description": "File path or URI of the loaded domain Sūtra cartridge."
+    },
+
+    "meta": {
+      "type": "object",
+      "description": "Provenance and audit metadata.",
+      "properties": {
+        "translator_model":   { "type": "string", "description": "The neural model that produced this KP instance." },
+        "extraction_time_ms": { "type": "number" },
+        "source_hash":        { "type": "string", "description": "SHA-256 of the raw_input for tamper detection." }
+      }
+    }
+  },
+
+  "$defs": {
+    "constraint": {
+      "type": "object",
+      "description": "A single verification rule that the Verifier checks against the Sūtra cartridge.",
+      "required": ["rule_id", "check"],
+      "properties": {
+        "rule_id": { "type": "string", "description": "The Sūtra ID from the loaded cartridge." },
+        "check":   { "type": "string", "description": "Human-readable description of what is being verified." },
+        "field":   { "type": "string", "description": "The property being checked (e.g., 'vibhakti', 'type', 'permission')." },
+        "expected": { "description": "The legal value(s) according to the Sūtra." },
+        "actual":   { "description": "The value found in the input." }
+      }
+    }
+  }
+}

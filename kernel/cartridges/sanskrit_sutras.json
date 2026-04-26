@@ -1,0 +1,58 @@
+{
+  "domain": "sanskrit",
+  "version": "1.0.0",
+  "description": "Pāṇinian grammar rules for Sanskrit logical verification. Maps Dhātupāṭha roots to Vibhakti case constraints.",
+
+  "root_lexicon": {
+    "gacchati": { "root": "√gam", "class": "bhvādi", "transitivity": "intransitive", "meaning": "goes" },
+    "paṭhati":  { "root": "√paṭh", "class": "bhvādi", "transitivity": "transitive", "meaning": "reads" },
+    "karoti":   { "root": "√kṛ",  "class": "tanādi", "transitivity": "transitive", "meaning": "does/makes" },
+    "dadāti":   { "root": "√dā",  "class": "juhotyādi", "transitivity": "ditransitive", "meaning": "gives" },
+    "rakṣati":  { "root": "√rakṣ", "class": "bhvādi", "transitivity": "transitive", "meaning": "protects" },
+    "asti":     { "root": "√as",  "class": "adādi", "transitivity": "intransitive", "meaning": "is/exists" },
+    "bhavati":  { "root": "√bhū", "class": "bhvādi", "transitivity": "intransitive", "meaning": "becomes" },
+    "santi":    { "root": "√as",  "class": "adādi", "transitivity": "intransitive", "meaning": "are/exist" },
+    "nivārayati": { "root": "√ni-vṛ", "class": "curādi", "transitivity": "transitive", "meaning": "prevents" },
+    "rakṣyate": { "root": "√rakṣ", "class": "bhvādi", "transitivity": "transitive", "meaning": "is protected (passive)" },
+    "āsīt":     { "root": "√as",  "class": "adādi", "transitivity": "intransitive", "meaning": "was" }
+  },
+
+  "sutras": [
+    {
+      "id": "S1.4.54",
+      "description": "Transitive verb (sakarmaka) requires an object (karma)",
+      "target_role": "karma",
+      "field": "lemma",
+      "condition": "requires",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "S2.3.1",
+      "description": "Agent (kartā) must be in nominative case (prathamā vibhakti)",
+      "target_role": "karta",
+      "field": "vibhakti",
+      "condition": "in",
+      "expected": ["nominative", "prathamā"],
+      "severity": "error"
+    },
+    {
+      "id": "S2.3.2",
+      "description": "Object (karma) must be in accusative case (dvitīyā vibhakti)",
+      "target_role": "karma",
+      "field": "vibhakti",
+      "condition": "in",
+      "expected": ["accusative", "dvitīyā"],
+      "severity": "warning"
+    },
+    {
+      "id": "S2.3.18",
+      "description": "Instrument (karaṇa) must be in instrumental case (tṛtīyā vibhakti)",
+      "target_role": "karana",
+      "field": "vibhakti",
+      "condition": "in",
+      "expected": ["instrumental", "tṛtīyā"],
+      "severity": "error"
+    }
+  ]
+}

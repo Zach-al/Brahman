@@ -1,0 +1,63 @@
+{
+  "domain": "rust_crypto",
+  "version": "1.0.0",
+  "description": "Sūtra cartridge for auditing Rust/Solana smart contracts. Maps common Anchor operations to safety constraints.",
+
+  "root_lexicon": {
+    "transfer":    { "root": "spl::transfer", "class": "token_op", "transitivity": "ditransitive", "meaning": "moves tokens between accounts" },
+    "mint_to":     { "root": "spl::mint_to", "class": "token_op", "transitivity": "transitive", "meaning": "creates new tokens" },
+    "burn":        { "root": "spl::burn", "class": "token_op", "transitivity": "transitive", "meaning": "destroys tokens" },
+    "invoke":      { "root": "solana::invoke", "class": "cpi", "transitivity": "transitive", "meaning": "cross-program invocation" },
+    "close":       { "root": "anchor::close", "class": "account_op", "transitivity": "transitive", "meaning": "closes an account and reclaims rent" },
+    "initialize":  { "root": "anchor::init", "class": "account_op", "transitivity": "transitive", "meaning": "creates a new account" },
+    "assert_owner": { "root": "security::check", "class": "guard", "transitivity": "transitive", "meaning": "verifies account ownership" }
+  },
+
+  "sutras": [
+    {
+      "id": "RC-001",
+      "description": "Token transfer requires a verified signer (agent must have authority)",
+      "target_role": "karta",
+      "field": "is_signer",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-002",
+      "description": "CPI invoke must validate the target program ID (prevent fake program injection)",
+      "target_role": "karma",
+      "field": "program_id_verified",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-003",
+      "description": "Account close must send remaining lamports to a designated recipient",
+      "target_role": "sampradana",
+      "field": "lemma",
+      "condition": "requires",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-004",
+      "description": "Mint authority must match the expected PDA",
+      "target_role": "karta",
+      "field": "is_pda_derived",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-005",
+      "description": "Transfer amount must not exceed escrow balance (overflow prevention)",
+      "target_role": "karana",
+      "field": "overflow_checked",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    }
+  ]
+}

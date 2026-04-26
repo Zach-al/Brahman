@@ -1,0 +1,55 @@
+{
+  "domain": "thermodynamics",
+  "version": "1.0.0",
+  "description": "Sūtra cartridge for verifying thermodynamic process claims. Maps physical transformations to conservation law constraints.",
+
+  "root_lexicon": {
+    "heats":       { "root": "thermo::Q+", "class": "energy_transfer", "transitivity": "transitive", "meaning": "adds thermal energy" },
+    "cools":       { "root": "thermo::Q-", "class": "energy_transfer", "transitivity": "transitive", "meaning": "removes thermal energy" },
+    "expands":     { "root": "thermo::PdV+", "class": "work", "transitivity": "intransitive", "meaning": "increases volume" },
+    "compresses":  { "root": "thermo::PdV-", "class": "work", "transitivity": "transitive", "meaning": "decreases volume" },
+    "melts":       { "root": "thermo::phase_s_l", "class": "phase_change", "transitivity": "intransitive", "meaning": "solid to liquid transition" },
+    "freezes":     { "root": "thermo::phase_l_s", "class": "phase_change", "transitivity": "intransitive", "meaning": "liquid to solid transition" },
+    "combusts":    { "root": "chem::oxidation", "class": "reaction", "transitivity": "transitive", "meaning": "rapid exothermic oxidation" },
+    "catalyzes":   { "root": "chem::catalyst", "class": "reaction", "transitivity": "ditransitive", "meaning": "lowers activation energy" }
+  },
+
+  "sutras": [
+    {
+      "id": "TD-001",
+      "description": "First Law: Energy in a closed system must be conserved (ΔU = Q - W)",
+      "target_role": "adhikarana",
+      "field": "system_type",
+      "condition": "in",
+      "expected": ["closed", "isolated", "adiabatic"],
+      "severity": "error"
+    },
+    {
+      "id": "TD-002",
+      "description": "Second Law: Entropy of an isolated system cannot decrease",
+      "target_role": "karana",
+      "field": "entropy_change",
+      "condition": "not_in",
+      "expected": ["negative"],
+      "severity": "error"
+    },
+    {
+      "id": "TD-003",
+      "description": "Phase change requires sufficient latent heat (instrument must supply energy)",
+      "target_role": "karana",
+      "field": "energy_sufficient",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "TD-004",
+      "description": "Combustion requires oxidizer presence in environment",
+      "target_role": "adhikarana",
+      "field": "oxidizer_present",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    }
+  ]
+}
