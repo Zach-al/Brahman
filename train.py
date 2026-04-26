@@ -20,8 +20,8 @@ class Config:
     ablation_save_path = "brahman_ablation.pth"
     phase1_epochs = 3
     phase2_epochs = 5
-    phase3_epochs = 7
-    early_stopping_patience = 5
+    phase3_epochs = 15  # Extended for deceptive fallacy internalization
+    early_stopping_patience = 8
     lr_encoder = 1e-5
     lr_task_head = 3e-5
     batch_size = 32
@@ -48,8 +48,10 @@ class LogicDataset(Dataset):
         }
         valid_forms_p2 = valid_forms_p1.union({
             "fallacy_affirming_consequent", "fallacy_denying_antecedent",
-            "contrapositive_fail", "causal_prevention"
+            "contrapositive_fail", "causal_prevention", "upstream_prevention"
         })
+        # Phase 3 accepts ALL form types including:
+        # undistributed_middle, illicit_major, circular_reasoning
         for ex in examples:
             form = ex.get("form_type", "")
             if phase == 1 and form not in valid_forms_p1:

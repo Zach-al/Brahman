@@ -117,28 +117,86 @@ def generate_causal_example(subtype):
             "difficulty": 3
         }
 
+# ── DECEPTIVE FALLACY GENERATORS ─────────────────────────────────
+# These are the hardest patterns — they LOOK valid but are logically broken.
+
+CATEGORIES = ["mortal", "wise", "strong", "rational", "peaceful", "conscious", "ancient", "skilled", "brave", "learned"]
+
+def generate_undistributed_middle():
+    """All A are B. All C are B. Therefore all A are C. (INVALID)"""
+    cats = random.sample(CATEGORIES, 3)
+    A, B, C = cats[0], cats[1], cats[2]
+    return {
+        "form_type": "undistributed_middle",
+        "premises": [f"All who are {A} are {B}.", f"All who are {C} are {B}."],
+        "question": f"Are all who are {A} definitely {C}?",
+        "correct_answer": "No",
+        "is_valid": False,
+        "explanation": f"Undistributed Middle fallacy: Both {A} and {C} share property {B}, but this does not make them identical categories.",
+        "difficulty": 4
+    }
+
+def generate_illicit_major():
+    """All A are B. No C are A. Therefore no C are B. (INVALID)"""
+    cats = random.sample(CATEGORIES, 3)
+    A, B, C = cats[0], cats[1], cats[2]
+    return {
+        "form_type": "illicit_major",
+        "premises": [f"All who are {A} are {B}.", f"No one who is {C} is {A}."],
+        "question": f"Is it true that no one who is {C} is {B}?",
+        "correct_answer": "No",
+        "is_valid": False,
+        "explanation": f"Illicit Major fallacy: {C} beings might still be {B} through a category other than {A}.",
+        "difficulty": 4
+    }
+
+def generate_circular_reasoning():
+    """X is true because Y. Y is true because X. (INVALID)"""
+    cats = random.sample(CATEGORIES, 2)
+    A, B = cats[0], cats[1]
+    X = random.choice(AGENTS)
+    return {
+        "form_type": "circular_reasoning",
+        "premises": [f"{X} is {A} because {X} is {B}.", f"{X} is {B} because {X} is {A}."],
+        "question": f"Is {X} proven to be {A}?",
+        "correct_answer": "No",
+        "is_valid": False,
+        "explanation": f"Circular Reasoning: The argument for {A} depends on {B}, which itself depends on {A}. No independent evidence.",
+        "difficulty": 5
+    }
+
 def generate_full_dataset():
     out_dir = Path("data/processed")
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "training_data.jsonl"
     
     with open(out_path, "w", encoding="utf-8") as f:
+        # ── VALID patterns (35,334 total) ────────────────────────
         for _ in range(15000):
             f.write(json.dumps(generate_modus_ponens()) + "\n")
         for _ in range(8000):
             f.write(json.dumps(generate_modus_tollens()) + "\n")
         for _ in range(8000):
             f.write(json.dumps(generate_hypothetical_syllogism()) + "\n")
+        causal_types = ["simple_chain", "causal_prevention", "upstream_prevention"]
+        counts = [3334, 3333, 3333] # Total 10000 (but prevention is VALID in our framing)
+        for i, count in enumerate(counts):
+            for _ in range(count):
+                f.write(json.dumps(generate_causal_example(causal_types[i])) + "\n")
+
+        # ── INVALID patterns (24,000 total — balanced against VALID) ──
         for _ in range(7000):
             f.write(json.dumps(generate_fallacy_affirming_consequent()) + "\n")
         for _ in range(7000):
             f.write(json.dumps(generate_fallacy_denying_antecedent()) + "\n")
-        
-        causal_types = ["simple_chain", "causal_prevention", "upstream_prevention"]
-        counts = [3334, 3333, 3333] # Total 10000
-        for i, count in enumerate(counts):
-            for _ in range(count):
-                f.write(json.dumps(generate_causal_example(causal_types[i])) + "\n")
+
+        # ── NEW: Deceptive fallacies (10,000 total) ──────────────
+        for _ in range(3334):
+            f.write(json.dumps(generate_undistributed_middle()) + "\n")
+        for _ in range(3333):
+            f.write(json.dumps(generate_illicit_major()) + "\n")
+        for _ in range(3333):
+            f.write(json.dumps(generate_circular_reasoning()) + "\n")
                 
     return str(out_path)
 
