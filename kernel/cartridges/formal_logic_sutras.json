@@ -1,0 +1,131 @@
+{
+  "domain": "formal_logic",
+  "version": "1.0.0",
+  "description": "Propositional and predicate logic cartridge. Validates syllogistic claims, quantifier scoping, and inference rule legality. The most abstract cartridge — pure mathematics.",
+
+  "root_lexicon": {
+    "implies":       { "root": "logic::→",  "class": "connective", "transitivity": "ditransitive", "meaning": "material conditional" },
+    "and":           { "root": "logic::∧",  "class": "connective", "transitivity": "ditransitive", "meaning": "conjunction" },
+    "or":            { "root": "logic::∨",  "class": "connective", "transitivity": "ditransitive", "meaning": "disjunction" },
+    "not":           { "root": "logic::¬",  "class": "connective", "transitivity": "transitive", "meaning": "negation" },
+    "iff":           { "root": "logic::↔",  "class": "connective", "transitivity": "ditransitive", "meaning": "biconditional" },
+    "forall":        { "root": "logic::∀",  "class": "quantifier", "transitivity": "transitive", "meaning": "universal quantification" },
+    "exists":        { "root": "logic::∃",  "class": "quantifier", "transitivity": "transitive", "meaning": "existential quantification" },
+    "entails":       { "root": "logic::⊨",  "class": "meta", "transitivity": "ditransitive", "meaning": "semantic entailment" },
+    "proves":        { "root": "logic::⊢",  "class": "meta", "transitivity": "ditransitive", "meaning": "syntactic derivability" },
+    "contradicts":   { "root": "logic::⊥",  "class": "meta", "transitivity": "transitive", "meaning": "leads to contradiction" },
+    "distributes":   { "root": "syllogism::dist", "class": "syllogistic", "transitivity": "transitive", "meaning": "term appears in full extension" },
+    "subsumes":      { "root": "set::⊆", "class": "set_theory", "transitivity": "ditransitive", "meaning": "subset relation" }
+  },
+
+  "sutras": [
+    {
+      "id": "LOG-001",
+      "description": "Modus Ponens: If P→Q and P, then Q must follow",
+      "target_role": "karma",
+      "field": "consequent_derived",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "LOG-002",
+      "description": "Affirming the Consequent is INVALID: P→Q and Q does NOT entail P",
+      "target_role": "karta",
+      "field": "affirming_consequent",
+      "condition": "not_in",
+      "expected": [true],
+      "severity": "error"
+    },
+    {
+      "id": "LOG-003",
+      "description": "Denying the Antecedent is INVALID: P→Q and ¬P does NOT entail ¬Q",
+      "target_role": "karta",
+      "field": "denying_antecedent",
+      "condition": "not_in",
+      "expected": [true],
+      "severity": "error"
+    },
+    {
+      "id": "SYL-001",
+      "description": "Middle term must be distributed in at least one premise (prevents undistributed middle)",
+      "target_role": "karana",
+      "field": "middle_distributed",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "SYL-002",
+      "description": "A term distributed in the conclusion must be distributed in its premise (prevents illicit major/minor)",
+      "target_role": "karma",
+      "field": "conclusion_term_distributed_in_premise",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "SYL-003",
+      "description": "Two negative premises cannot yield a valid conclusion (exclusive premises fallacy)",
+      "target_role": "adhikarana",
+      "field": "both_premises_negative",
+      "condition": "not_in",
+      "expected": [true],
+      "severity": "error"
+    },
+    {
+      "id": "SYL-004",
+      "description": "If one premise is negative, the conclusion must be negative",
+      "target_role": "karma",
+      "field": "negative_premise_negative_conclusion",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "QUANT-001",
+      "description": "Universal instantiation requires the variable to be truly free (no capture)",
+      "target_role": "karma",
+      "field": "variable_free",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "QUANT-002",
+      "description": "Existential generalization requires a witness term",
+      "target_role": "karta",
+      "field": "witness_provided",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "CIRC-001",
+      "description": "Circular reasoning: conclusion must not appear as a premise (begging the question)",
+      "target_role": "adhikarana",
+      "field": "conclusion_in_premises",
+      "condition": "not_in",
+      "expected": [true],
+      "severity": "error"
+    },
+    {
+      "id": "CONSIST-001",
+      "description": "Premise set must be consistent (no P ∧ ¬P derivable)",
+      "target_role": "adhikarana",
+      "field": "premises_consistent",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "SCOPE-001",
+      "description": "Quantifier scope must respect nesting order (∀x∃y ≠ ∃y∀x in general)",
+      "target_role": "karana",
+      "field": "scope_order_preserved",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    }
+  ]
+}

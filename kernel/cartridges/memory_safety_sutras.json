@@ -1,0 +1,134 @@
+{
+  "domain": "memory_safety",
+  "version": "1.0.0",
+  "description": "Zero-day exploit detection cartridge. Validates memory operations against buffer safety, use-after-free, integer overflow, and privilege escalation constraints. Multi-layered sūtras with cross-role dependencies.",
+
+  "root_lexicon": {
+    "malloc":       { "root": "libc::malloc",  "class": "heap_alloc", "transitivity": "transitive", "meaning": "allocates heap memory", "requires_free": true },
+    "calloc":       { "root": "libc::calloc",  "class": "heap_alloc", "transitivity": "transitive", "meaning": "allocates zeroed heap memory", "requires_free": true },
+    "realloc":      { "root": "libc::realloc", "class": "heap_alloc", "transitivity": "transitive", "meaning": "resizes heap allocation", "requires_free": true },
+    "free":         { "root": "libc::free",    "class": "heap_dealloc", "transitivity": "transitive", "meaning": "releases heap memory" },
+    "memcpy":       { "root": "libc::memcpy",  "class": "buffer_op", "transitivity": "ditransitive", "meaning": "copies memory between buffers" },
+    "strcpy":       { "root": "libc::strcpy",  "class": "buffer_op", "transitivity": "ditransitive", "meaning": "copies null-terminated string", "unsafe": true },
+    "strncpy":      { "root": "libc::strncpy", "class": "buffer_op", "transitivity": "ditransitive", "meaning": "copies bounded string" },
+    "sprintf":      { "root": "libc::sprintf", "class": "format_op", "transitivity": "ditransitive", "meaning": "formatted string write", "unsafe": true },
+    "snprintf":     { "root": "libc::snprintf","class": "format_op", "transitivity": "ditransitive", "meaning": "bounded formatted string write" },
+    "read":         { "root": "posix::read",   "class": "io_op", "transitivity": "ditransitive", "meaning": "reads from file descriptor" },
+    "write":        { "root": "posix::write",  "class": "io_op", "transitivity": "ditransitive", "meaning": "writes to file descriptor" },
+    "exec":         { "root": "posix::exec",   "class": "process_op", "transitivity": "transitive", "meaning": "replaces process image" },
+    "setuid":       { "root": "posix::setuid", "class": "priv_op", "transitivity": "transitive", "meaning": "changes process privilege level" },
+    "mmap":         { "root": "posix::mmap",   "class": "mem_map", "transitivity": "transitive", "meaning": "maps file/device into memory" },
+    "ioctl":        { "root": "posix::ioctl",  "class": "device_op", "transitivity": "ditransitive", "meaning": "device control operation" }
+  },
+
+  "sutras": [
+    {
+      "id": "MEM-001",
+      "description": "Buffer write must have bounds check (prevents overflow)",
+      "target_role": "karma",
+      "field": "bounds_checked",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "MEM-002",
+      "description": "Source buffer size must not exceed destination capacity",
+      "target_role": "apadana",
+      "field": "size_leq_dest",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "MEM-003",
+      "description": "Heap pointer must not be used after free (use-after-free)",
+      "target_role": "karma",
+      "field": "is_freed",
+      "condition": "not_in",
+      "expected": [true],
+      "severity": "error"
+    },
+    {
+      "id": "MEM-004",
+      "description": "Allocation size must be checked for integer overflow before malloc",
+      "target_role": "karana",
+      "field": "overflow_checked",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "MEM-005",
+      "description": "Return value of malloc must be checked for NULL",
+      "target_role": "karma",
+      "field": "null_checked",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "PRIV-001",
+      "description": "setuid/exec must validate caller has CAP_SETUID capability",
+      "target_role": "karta",
+      "field": "has_capability",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "PRIV-002",
+      "description": "Privilege escalation requires audit log entry in environment",
+      "target_role": "adhikarana",
+      "field": "audit_logged",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "FMT-001",
+      "description": "Format string must not contain user-controlled input (format string attack)",
+      "target_role": "karana",
+      "field": "format_string_safe",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "IO-001",
+      "description": "File descriptor must be validated before read/write (TOCTOU prevention)",
+      "target_role": "karta",
+      "field": "fd_validated",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "IO-002",
+      "description": "Read buffer must be caller-owned (prevents kernel memory leak)",
+      "target_role": "karma",
+      "field": "caller_owned",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "MMAP-001",
+      "description": "mmap region must not be both writable and executable (W^X policy)",
+      "target_role": "karma",
+      "field": "wx_violation",
+      "condition": "not_in",
+      "expected": [true],
+      "severity": "error"
+    },
+    {
+      "id": "DOUBLE-FREE",
+      "description": "Pointer must not be freed twice (double-free detection)",
+      "target_role": "karma",
+      "field": "already_freed",
+      "condition": "not_in",
+      "expected": [true],
+      "severity": "error"
+    }
+  ]
+}

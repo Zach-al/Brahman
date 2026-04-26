@@ -235,6 +235,11 @@ class BrahmanKernel:
             # Check the field on this node
             actual_value = self._resolve_field(role_node, sutra.field, root_entry)
 
+            # If the field is absent and this isn't a "must exist" check,
+            # the sūtra is NOT APPLICABLE to this node — skip it.
+            if actual_value is None and sutra.condition not in ("requires", "exists"):
+                continue
+
             passed = self._evaluate_condition(
                 sutra.condition, actual_value, sutra.expected
             )

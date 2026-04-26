@@ -1,0 +1,134 @@
+{
+  "domain": "biochemistry",
+  "version": "1.0.0",
+  "description": "Enzyme catalysis and molecular interaction cartridge. Validates biochemical reaction claims against thermodynamic feasibility, substrate specificity, and regulatory constraints. Stress-tests cross-role dependencies.",
+
+  "root_lexicon": {
+    "phosphorylates": { "root": "kinase::transfer_PO4", "class": "post_translational", "transitivity": "ditransitive", "meaning": "transfers phosphate group to substrate", "requires_atp": true },
+    "dephosphorylates": { "root": "phosphatase::remove_PO4", "class": "post_translational", "transitivity": "transitive", "meaning": "removes phosphate group from substrate" },
+    "cleaves":    { "root": "protease::hydrolyze", "class": "proteolytic", "transitivity": "transitive", "meaning": "breaks peptide bond" },
+    "ligates":    { "root": "ligase::join", "class": "ligation", "transitivity": "ditransitive", "meaning": "joins two molecules with covalent bond", "requires_atp": true },
+    "oxidizes":   { "root": "oxidase::e_transfer", "class": "redox", "transitivity": "transitive", "meaning": "removes electrons from substrate" },
+    "reduces":    { "root": "reductase::e_accept", "class": "redox", "transitivity": "transitive", "meaning": "adds electrons to substrate" },
+    "transcribes": { "root": "rnap::dna_to_rna", "class": "central_dogma", "transitivity": "transitive", "meaning": "synthesizes RNA from DNA template" },
+    "translates": { "root": "ribosome::rna_to_protein", "class": "central_dogma", "transitivity": "transitive", "meaning": "synthesizes protein from mRNA template" },
+    "folds":      { "root": "chaperone::fold", "class": "structural", "transitivity": "transitive", "meaning": "assists protein folding to native state" },
+    "denatures":  { "root": "thermo::unfold", "class": "structural", "transitivity": "transitive", "meaning": "disrupts native protein structure" },
+    "binds":      { "root": "receptor::bind", "class": "signaling", "transitivity": "ditransitive", "meaning": "non-covalent association between molecules" },
+    "inhibits":   { "root": "inhibitor::block", "class": "regulatory", "transitivity": "transitive", "meaning": "reduces or blocks enzyme activity" },
+    "activates":  { "root": "activator::enhance", "class": "regulatory", "transitivity": "transitive", "meaning": "increases enzyme activity" },
+    "methylates": { "root": "methyltransferase::add_CH3", "class": "epigenetic", "transitivity": "ditransitive", "meaning": "adds methyl group to substrate" },
+    "ubiquitinates": { "root": "e3_ligase::tag_ub", "class": "degradation", "transitivity": "transitive", "meaning": "marks protein for proteasomal degradation", "requires_atp": true }
+  },
+
+  "sutras": [
+    {
+      "id": "BIO-001",
+      "description": "Enzyme (agent) must have correct substrate specificity for the target",
+      "target_role": "karma",
+      "field": "substrate_compatible",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-002",
+      "description": "ATP-dependent reactions require ATP availability in environment",
+      "target_role": "adhikarana",
+      "field": "atp_available",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-003",
+      "description": "Reaction requires physiological pH range (6.5-8.0) in environment",
+      "target_role": "adhikarana",
+      "field": "ph_in_range",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-004",
+      "description": "Reaction temperature must not exceed denaturation threshold of enzyme",
+      "target_role": "adhikarana",
+      "field": "below_denaturation_temp",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-005",
+      "description": "Enzyme must not be inhibited by a present competitive inhibitor",
+      "target_role": "karta",
+      "field": "not_inhibited",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-006",
+      "description": "Redox reaction requires compatible electron carrier (NAD+/FAD/NADP+)",
+      "target_role": "karana",
+      "field": "carrier_compatible",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-007",
+      "description": "Transcription requires promoter region accessibility (not methylated/compacted)",
+      "target_role": "karma",
+      "field": "promoter_accessible",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-008",
+      "description": "Protein folding requires chaperone availability for proteins > 30kDa",
+      "target_role": "karana",
+      "field": "chaperone_available",
+      "condition": "equals",
+      "expected": true,
+      "severity": "warning"
+    },
+    {
+      "id": "BIO-009",
+      "description": "Receptor-ligand binding requires Kd below threshold for physiological effect",
+      "target_role": "karana",
+      "field": "kd_below_threshold",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-010",
+      "description": "Ubiquitination requires E1-E2-E3 cascade completeness",
+      "target_role": "karta",
+      "field": "cascade_complete",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "BIO-011",
+      "description": "Central dogma violation: protein cannot template DNA synthesis",
+      "target_role": "karma",
+      "field": "template_type",
+      "condition": "not_in",
+      "expected": ["protein_to_dna"],
+      "severity": "error"
+    },
+    {
+      "id": "BIO-012",
+      "description": "Allosteric regulation requires conformational change site on enzyme",
+      "target_role": "karta",
+      "field": "has_allosteric_site",
+      "condition": "equals",
+      "expected": true,
+      "severity": "warning"
+    }
+  ]
+}
