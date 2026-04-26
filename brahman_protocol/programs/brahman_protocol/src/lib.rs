@@ -1,3 +1,7 @@
+// Licensed under BSL 1.1 — commercial use requires written permission
+// Change date: 2027-01-01 to MIT License by Bhupen Nayak
+// Contact: askzachn@gmail.com
+
 use anchor_lang::prelude::*;
 
 declare_id!("hkCmPnS4SRfniSuXhP9yyW55q1fj8xVEyeRcDzSRh6t");

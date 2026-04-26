@@ -128,7 +128,7 @@ The engine was tested against the **three largest Solana exploits in history**. 
 | **Mango Markets** | Oct 2022 | $114M | Oracle price manipulation via self-trading — used spot price instead of TWAP | RC-008, RC-009, RC-010 |
 | **Cashio Collapse** | Mar 2022 | $52M | Fake collateral account bypassed incomplete verification chain | RC-004, RC-011, RC-012 |
 
-**Total prevented: $492,000,000** — Run: `python3 kernel/crucible_test.py`
+**The engine correctly identifies patterns behind $492,000,000 in historical exploits** — Run: `python3 kernel/crucible_test.py`
 
 ---
 

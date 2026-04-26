@@ -435,7 +435,7 @@ if __name__ == "__main__":
     total_damage = "$326M + $114M + $52M = $492,000,000"
     print(f"  RESULTS: {passed}/{total} tests passed")
     if failed == 0:
-        print(f"  ✓ ALL EXPLOITS DETECTED — Brahman would have prevented {total_damage}")
+        print(f"  ✓ ALL EXPLOITS DETECTED — Brahman correctly identifies patterns behind {total_damage} in historical exploits")
         print(f"  ✓ ALL LEGITIMATE TXs APPROVED — Zero false positives")
     else:
         print(f"  ✗ {failed} TESTS FAILED")

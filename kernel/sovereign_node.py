@@ -1,3 +1,7 @@
+# Licensed under BSL 1.1 — commercial use requires written permission
+# Change date: 2027-01-01 to MIT License by Bhupen Nayak
+# Contact: askzachn@gmail.com
+
 """
 Brahman Sovereign Node — Solnet Mesh RPC Wrapper
 
@@ -31,9 +35,9 @@ import asyncio
 from pathlib import Path
 from typing import Optional, List, Dict
 from contextlib import asynccontextmanager
-
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Security, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel, Field
 
 import sys
@@ -46,6 +50,17 @@ from brahman_kernel import BrahmanKernel, Verdict, VerificationResult
 # ══════════════════════════════════════════════════════════════════
 
 NODE_ID = os.environ.get("BRAHMAN_NODE_ID", f"sovereign-{hashlib.sha256(os.urandom(8)).hexdigest()[:8]}")
+
+API_KEY = os.environ.get("BRAHMAN_API_KEY", "brahman-dev-secret-key-123")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    if api_key_header == API_KEY:
+        return api_key_header
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or missing API Key"
+    )
 CARTRIDGE_DIR = Path(__file__).parent / "cartridges"
 DEFAULT_CARTRIDGE = "sanskrit_sutras.json"
 
@@ -131,7 +146,7 @@ app.add_middleware(
 # ENDPOINTS
 # ══════════════════════════════════════════════════════════════════
 
-@app.get("/health", response_model=NodeHealth)
+@app.get("/health", response_model=NodeHealth, dependencies=[Depends(get_api_key)])
 async def health():
     """Node health check — returns status, loaded domain, and statistics."""
     cartridges = [f.name for f in CARTRIDGE_DIR.glob("*.json")]
@@ -147,7 +162,7 @@ async def health():
     )
 
 
-@app.get("/cartridges")
+@app.get("/cartridges", dependencies=[Depends(get_api_key)])
 async def list_cartridges():
     """List all available Sūtra cartridges."""
     cartridges = []
@@ -164,7 +179,7 @@ async def list_cartridges():
     return {"cartridges": cartridges, "loaded": kernel.loaded_domain}
 
 
-@app.post("/cartridge/load")
+@app.post("/cartridge/load", dependencies=[Depends(get_api_key)])
 async def load_cartridge(req: LoadCartridgeRequest):
     """Hot-swap a Sūtra cartridge at runtime."""
     path = CARTRIDGE_DIR / req.cartridge
@@ -174,7 +189,7 @@ async def load_cartridge(req: LoadCartridgeRequest):
     return {"status": "loaded", "message": msg, "domain": kernel.loaded_domain}
 
 
-@app.post("/verify", response_model=VerifyResponse)
+@app.post("/verify", response_model=VerifyResponse, dependencies=[Depends(get_api_key)])
 async def verify_text(req: VerifyRequest):
     """
     Verify raw text through the full pipeline:
@@ -228,7 +243,7 @@ async def verify_text(req: VerifyRequest):
     )
 
 
-@app.post("/verify/kp", response_model=VerifyResponse)
+@app.post("/verify/kp", response_model=VerifyResponse, dependencies=[Depends(get_api_key)])
 async def verify_kp(req: KPVerifyRequest):
     """
     Verify a pre-built Kāraka Protocol instance directly.

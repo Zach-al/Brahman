@@ -1,3 +1,7 @@
+# Licensed under BSL 1.1 — commercial use requires written permission
+# Change date: 2027-01-01 to MIT License by Bhupen Nayak
+# Contact: askzachn@gmail.com
+
 """
 Brahman Validator Client — Off-Chain Transaction Verification Daemon
 
