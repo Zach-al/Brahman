@@ -95,7 +95,7 @@ RULES:
         from mlx_lm import generate as mlx_generate
 
         effective_domain = domain or self.domain
-        user_prompt = f"Domain: {effective_domain}\nInput: {raw_input}"
+        user_prompt = f"Domain: {effective_domain}\nInput: {raw_input}\n/nothink"
 
         # Build chat messages
         messages = [
@@ -114,9 +114,7 @@ RULES:
             self.model,
             self.tokenizer,
             prompt=prompt,
-            max_tokens=512,
-            temp=0.1,         # Near-deterministic
-            top_p=0.9,
+            max_tokens=1024,
         )
         elapsed = time.time() - start
 
@@ -136,8 +134,11 @@ RULES:
         Falls back to a minimal AMBIGUOUS KP if parsing fails.
         """
         # Try to find JSON in the response
-        # Strip markdown code fences if present
+        # Strip Qwen3 thinking tokens (<think>...</think>)
         cleaned = response.strip()
+        cleaned = re.sub(r'<think>.*?</think>', '', cleaned, flags=re.DOTALL)
+        # Strip markdown code fences if present
+        cleaned = cleaned.strip()
         cleaned = re.sub(r'^```json\s*', '', cleaned)
         cleaned = re.sub(r'^```\s*', '', cleaned)
         cleaned = re.sub(r'\s*```$', '', cleaned)
