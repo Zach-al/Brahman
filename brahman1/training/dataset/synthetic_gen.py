@@ -7,6 +7,10 @@ AGENTS = ["Ram", "Sita", "the king", "the teacher", "the scholar", "the warrior"
 PROPERTIES = ["mortal", "wise", "strong", "rational", "finite", "peaceful", "conscious", "ancient", "eternal", "skilled"]
 CAUSAL_EVENTS = ["fire spreads", "the river rises", "crops fail", "the bridge collapses", "disease spreads", "the army retreats"]
 
+# Novel entities/properties for distribution-shift robustness
+NOVEL_AGENTS = ["the physician", "the astronomer", "the musician", "the diplomat", "the architect", "the mathematician"]
+NOVEL_PROPERTIES = ["disciplined", "creative", "precise", "eloquent", "visionary", "methodical", "perceptive"]
+
 def get_a_b():
     props = random.sample(PROPERTIES, 2)
     return props[0], props[1]
@@ -22,6 +26,20 @@ def generate_modus_ponens():
         "is_valid": True,
         "explanation": f"By Modus Ponens: All {A} are {B}, and {X} is {A}, so {X} must be {B}.",
         "difficulty": 1
+    }
+
+def generate_novel_modus_ponens():
+    """Modus Ponens with OOD entities not seen in standard training."""
+    A, B = random.sample(NOVEL_PROPERTIES, 2)
+    X = random.choice(NOVEL_AGENTS)
+    return {
+        "form_type": "novel_modus_ponens",
+        "premises": [f"All who are {A} are {B}.", f"{X} is {A}."],
+        "question": f"Is {X} {B}?",
+        "correct_answer": "Yes",
+        "is_valid": True,
+        "explanation": f"By Modus Ponens: All {A} are {B}, and {X} is {A}, so {X} must be {B}.",
+        "difficulty": 2
     }
 
 def generate_modus_tollens():
@@ -129,11 +147,11 @@ def generate_undistributed_middle():
     return {
         "form_type": "undistributed_middle",
         "premises": [f"All who are {A} are {B}.", f"All who are {C} are {B}."],
-        "question": f"Are all who are {A} definitely {C}?",
-        "correct_answer": "No",
+        "question": f"Does it follow that all who are {A} are {C}?",
+        "correct_answer": f"No. Both share property {B} but are not identical.",
         "is_valid": False,
         "explanation": f"Undistributed Middle fallacy: Both {A} and {C} share property {B}, but this does not make them identical categories.",
-        "difficulty": 4
+        "difficulty": 2
     }
 
 def generate_illicit_major():
@@ -144,10 +162,10 @@ def generate_illicit_major():
         "form_type": "illicit_major",
         "premises": [f"All who are {A} are {B}.", f"No one who is {C} is {A}."],
         "question": f"Is it true that no one who is {C} is {B}?",
-        "correct_answer": "No",
+        "correct_answer": "No. This is the fallacy of illicit major.",
         "is_valid": False,
         "explanation": f"Illicit Major fallacy: {C} beings might still be {B} through a category other than {A}.",
-        "difficulty": 4
+        "difficulty": 3
     }
 
 def generate_circular_reasoning():
@@ -159,11 +177,41 @@ def generate_circular_reasoning():
         "form_type": "circular_reasoning",
         "premises": [f"{X} is {A} because {X} is {B}.", f"{X} is {B} because {X} is {A}."],
         "question": f"Is {X} proven to be {A}?",
-        "correct_answer": "No",
+        "correct_answer": "No. This is circular reasoning.",
         "is_valid": False,
         "explanation": f"Circular Reasoning: The argument for {A} depends on {B}, which itself depends on {A}. No independent evidence.",
-        "difficulty": 5
+        "difficulty": 2
     }
+
+def generate_four_step_chain():
+    """A→B, B→C, C→D, A is true. Therefore D. (VALID)"""
+    props = random.sample(PROPERTIES + NOVEL_PROPERTIES, 4)
+    A, B, C, D = props[0], props[1], props[2], props[3]
+    X = random.choice(AGENTS + NOVEL_AGENTS)
+    return {
+        "form_type": "four_step_chain",
+        "premises": [
+            f"Being {A} leads to being {B}.",
+            f"Being {B} leads to being {C}.",
+            f"Being {C} leads to being {D}.",
+            f"{X} is {A}."
+        ],
+        "question": f"Does {X} attain {D}?",
+        "correct_answer": f"Yes. Four-step chain: {A}→{B}→{C}→{D}.",
+        "is_valid": True,
+        "explanation": f"Valid four-step chain: {A} leads to {B}, which leads to {C}, which leads to {D}.",
+        "difficulty": 3
+    }
+
+# ══════════════════════════════════════════════════════════════════
+# DATASET GENERATION
+# ══════════════════════════════════════════════════════════════════
+#
+# BALANCE SHEET (exact 50/50):
+#   VALID  = 15000 + 5000 + 8000 + 8000 + 10000 + 8000 = 54,000
+#   INVALID = 18500 + 18500 + 8000 + 5000 + 4000       = 54,000
+#   TOTAL  = 108,000 examples
+#
 
 def generate_full_dataset():
     out_dir = Path("data/processed")
@@ -171,45 +219,78 @@ def generate_full_dataset():
     out_path = out_dir / "training_data.jsonl"
     
     with open(out_path, "w", encoding="utf-8") as f:
-        # ── VALID patterns (35,334 total) ────────────────────────
+        # ── VALID patterns (54,000 total) ────────────────────────
         for _ in range(15000):
             f.write(json.dumps(generate_modus_ponens()) + "\n")
+        for _ in range(5000):
+            f.write(json.dumps(generate_novel_modus_ponens()) + "\n")
         for _ in range(8000):
             f.write(json.dumps(generate_modus_tollens()) + "\n")
         for _ in range(8000):
             f.write(json.dumps(generate_hypothetical_syllogism()) + "\n")
         causal_types = ["simple_chain", "causal_prevention", "upstream_prevention"]
-        counts = [3334, 3333, 3333] # Total 10000 (but prevention is VALID in our framing)
+        counts = [3334, 3333, 3333]  # Total 10,000
         for i, count in enumerate(counts):
             for _ in range(count):
                 f.write(json.dumps(generate_causal_example(causal_types[i])) + "\n")
+        for _ in range(8000):
+            f.write(json.dumps(generate_four_step_chain()) + "\n")
 
-        # ── INVALID patterns (24,000 total — balanced against VALID) ──
-        for _ in range(7000):
+        # ── INVALID patterns (54,000 total) ──────────────────────
+        for _ in range(18500):
             f.write(json.dumps(generate_fallacy_affirming_consequent()) + "\n")
-        for _ in range(7000):
+        for _ in range(18500):
             f.write(json.dumps(generate_fallacy_denying_antecedent()) + "\n")
-
-        # ── NEW: Deceptive fallacies (10,000 total) ──────────────
-        for _ in range(3334):
+        for _ in range(8000):
             f.write(json.dumps(generate_undistributed_middle()) + "\n")
-        for _ in range(3333):
+        for _ in range(5000):
             f.write(json.dumps(generate_illicit_major()) + "\n")
-        for _ in range(3333):
+        for _ in range(4000):
             f.write(json.dumps(generate_circular_reasoning()) + "\n")
                 
     return str(out_path)
 
 if __name__ == "__main__":
     path = generate_full_dataset()
-    with open(path) as f:
-        count = sum(1 for line in f)
-    print(f"VERIFICATION: {count} total examples written to {path}")
-    import json, collections
+
+    # ── VERIFICATION ─────────────────────────────────────────────
+    total = 0
     seen = collections.Counter()
-    with open(path) as f:
+    valid_count = 0
+    invalid_count = 0
+
+    with open(path, encoding="utf-8") as f:
         for line in f:
             ex = json.loads(line)
-            seen[ex['form_type']] += 1
-    for k, v in sorted(seen.items()):
-        print(f"  {k}: {v}")
+            seen[ex["form_type"]] += 1
+            if ex["is_valid"]:
+                valid_count += 1
+            else:
+                invalid_count += 1
+            total += 1
+
+    print(f"{'='*60}")
+    print(f"VERIFICATION: {total} total examples written to {path}")
+    print(f"{'='*60}")
+    print(f"\n  {'Form Type':<35} {'Count':>7}  {'Label':<8}")
+    print(f"  {'-'*35} {'-'*7}  {'-'*8}")
+    for k in sorted(seen.keys()):
+        # Determine label from first example of this type
+        label = "VALID" if k in {
+            "modus_ponens", "novel_modus_ponens", "modus_tollens",
+            "hypothetical_syllogism", "simple_chain",
+            "causal_prevention", "upstream_prevention",
+            "four_step_chain"
+        } else "INVALID"
+        print(f"  {k:<35} {seen[k]:>7}  {label:<8}")
+
+    print(f"\n  {'─'*52}")
+    print(f"  VALID total:   {valid_count:>7}  ({valid_count/total*100:.1f}%)")
+    print(f"  INVALID total: {invalid_count:>7}  ({invalid_count/total*100:.1f}%)")
+    print(f"  {'─'*52}")
+
+    if valid_count == invalid_count:
+        print(f"  ✓ PERFECT 50/50 BALANCE")
+    else:
+        print(f"  ✗ IMBALANCED by {abs(valid_count - invalid_count)} examples")
+    print()

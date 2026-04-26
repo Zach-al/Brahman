@@ -48,7 +48,8 @@ class LogicDataset(Dataset):
         }
         valid_forms_p2 = valid_forms_p1.union({
             "fallacy_affirming_consequent", "fallacy_denying_antecedent",
-            "contrapositive_fail", "causal_prevention", "upstream_prevention"
+            "contrapositive_fail", "causal_prevention", "upstream_prevention",
+            "four_step_chain", "novel_modus_ponens"
         })
         # Phase 3 accepts ALL form types including:
         # undistributed_middle, illicit_major, circular_reasoning
