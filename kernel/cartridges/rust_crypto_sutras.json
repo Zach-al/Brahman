@@ -1,16 +1,25 @@
 {
   "domain": "rust_crypto",
-  "version": "1.0.0",
-  "description": "Sūtra cartridge for auditing Rust/Solana smart contracts. Maps common Anchor operations to safety constraints.",
+  "version": "2.0.0",
+  "description": "Hardened Sūtra cartridge for auditing Rust/Solana smart contracts. Covers the exact vulnerability classes exploited in Wormhole ($326M), Mango Markets ($114M), and Cashio ($52M). Maps Anchor/SPL operations to cryptographic safety constraints.",
 
   "root_lexicon": {
-    "transfer":    { "root": "spl::transfer", "class": "token_op", "transitivity": "ditransitive", "meaning": "moves tokens between accounts" },
-    "mint_to":     { "root": "spl::mint_to", "class": "token_op", "transitivity": "transitive", "meaning": "creates new tokens" },
-    "burn":        { "root": "spl::burn", "class": "token_op", "transitivity": "transitive", "meaning": "destroys tokens" },
-    "invoke":      { "root": "solana::invoke", "class": "cpi", "transitivity": "transitive", "meaning": "cross-program invocation" },
-    "close":       { "root": "anchor::close", "class": "account_op", "transitivity": "transitive", "meaning": "closes an account and reclaims rent" },
-    "initialize":  { "root": "anchor::init", "class": "account_op", "transitivity": "transitive", "meaning": "creates a new account" },
-    "assert_owner": { "root": "security::check", "class": "guard", "transitivity": "transitive", "meaning": "verifies account ownership" }
+    "transfer":         { "root": "spl::transfer", "class": "token_op", "transitivity": "ditransitive", "meaning": "moves tokens between accounts" },
+    "transfer_checked": { "root": "spl::transfer_checked", "class": "token_op", "transitivity": "ditransitive", "meaning": "moves tokens with decimal verification" },
+    "mint_to":          { "root": "spl::mint_to", "class": "token_op", "transitivity": "transitive", "meaning": "creates new tokens" },
+    "burn":             { "root": "spl::burn", "class": "token_op", "transitivity": "transitive", "meaning": "destroys tokens" },
+    "invoke":           { "root": "solana::invoke", "class": "cpi", "transitivity": "transitive", "meaning": "cross-program invocation" },
+    "invoke_signed":    { "root": "solana::invoke_signed", "class": "cpi", "transitivity": "transitive", "meaning": "CPI with PDA signer seeds" },
+    "close":            { "root": "anchor::close", "class": "account_op", "transitivity": "transitive", "meaning": "closes an account and reclaims rent" },
+    "initialize":       { "root": "anchor::init", "class": "account_op", "transitivity": "transitive", "meaning": "creates a new account" },
+    "assert_owner":     { "root": "security::check", "class": "guard", "transitivity": "transitive", "meaning": "verifies account ownership" },
+    "verify_signatures": { "root": "secp256k1::verify", "class": "crypto_op", "transitivity": "transitive", "meaning": "verifies cryptographic signatures" },
+    "complete_transfer": { "root": "bridge::complete", "class": "bridge_op", "transitivity": "ditransitive", "meaning": "finalizes cross-chain token transfer" },
+    "post_vaa":         { "root": "bridge::post_vaa", "class": "bridge_op", "transitivity": "transitive", "meaning": "posts Verified Action Approval from guardians" },
+    "borrow":           { "root": "lending::borrow", "class": "defi_op", "transitivity": "ditransitive", "meaning": "borrows against collateral" },
+    "liquidate":        { "root": "lending::liquidate", "class": "defi_op", "transitivity": "ditransitive", "meaning": "liquidates undercollateralized position" },
+    "update_oracle":    { "root": "oracle::update", "class": "oracle_op", "transitivity": "transitive", "meaning": "updates price feed from oracle" },
+    "swap":             { "root": "amm::swap", "class": "defi_op", "transitivity": "ditransitive", "meaning": "swaps tokens via AMM pool" }
   },
 
   "sutras": [
@@ -34,16 +43,16 @@
     },
     {
       "id": "RC-003",
-      "description": "Account close must send remaining lamports to a designated recipient",
+      "description": "When closing an account, recipient must be a designated beneficiary (prevents rent drain to arbitrary accounts)",
       "target_role": "sampradana",
-      "field": "lemma",
-      "condition": "requires",
+      "field": "is_designated_recipient",
+      "condition": "equals",
       "expected": true,
       "severity": "error"
     },
     {
       "id": "RC-004",
-      "description": "Mint authority must match the expected PDA",
+      "description": "Mint authority must match the expected PDA (prevents unauthorized minting)",
       "target_role": "karta",
       "field": "is_pda_derived",
       "condition": "equals",
@@ -55,6 +64,69 @@
       "description": "Transfer amount must not exceed escrow balance (overflow prevention)",
       "target_role": "karana",
       "field": "overflow_checked",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-006",
+      "description": "Guardian signature set must be verified by the Secp256k1 program BEFORE completing transfer (Wormhole CVE)",
+      "target_role": "karta",
+      "field": "signature_verified_by_secp256k1",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-007",
+      "description": "SignatureSet account owner must be the Bridge program, not an attacker-controlled program",
+      "target_role": "karta",
+      "field": "sig_account_owner_is_bridge",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-008",
+      "description": "Oracle price feed must come from a trusted, whitelisted oracle program (prevents price manipulation)",
+      "target_role": "karana",
+      "field": "oracle_is_trusted",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-009",
+      "description": "Collateral valuation must use time-weighted average price, not spot price (prevents flash loan manipulation)",
+      "target_role": "karana",
+      "field": "uses_twap",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-010",
+      "description": "Borrow amount must not exceed collateral value after haircut (LTV enforcement)",
+      "target_role": "karma",
+      "field": "ltv_checked",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-011",
+      "description": "Stablecoin mint must verify all backing collateral accounts are valid and fully collateralized (Cashio CVE)",
+      "target_role": "adhikarana",
+      "field": "collateral_fully_verified",
+      "condition": "equals",
+      "expected": true,
+      "severity": "error"
+    },
+    {
+      "id": "RC-012",
+      "description": "Account deserialization must verify discriminator bytes match expected type (type confusion prevention)",
+      "target_role": "karma",
+      "field": "discriminator_checked",
       "condition": "equals",
       "expected": true,
       "severity": "error"
