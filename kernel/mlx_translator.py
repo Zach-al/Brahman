@@ -51,7 +51,14 @@ RULES:
 1. Extract the MAIN ACTION as kriya. Use the verb's dictionary/root form for resolved_root.
 2. Map semantic roles to the 6 kāraka slots. Set unused slots to null.
 3. For domain, use the context: "sanskrit", "formal_logic", "memory_safety", "biochemistry", "rust_crypto", "thermodynamics", or "general".
-4. Output ONLY the JSON. No markdown, no explanation, no backticks."""
+4. Output ONLY the JSON. No markdown, no explanation, no backticks.
+
+FEW-SHOT MAPPING (CRITICAL):
+You must map conversational linguistic verbs to mathematical/domain roots.
+- Formal Logic: If you see "is", "are", "must be", or "therefore", map it to "entails" or "implies".
+  Example: "All cats are animals" -> resolved_root: "entails" (Cat -> Animal).
+- Biochemistry: If you see "cuts", "breaks", map it to "cleaves". If you see "adds PO4", map it to "phosphorylates".
+- Memory Safety: If you see "copies to", map to "memcpy" or "strcpy"."""
 
     def __init__(self, model_name: str = "mlx-community/Qwen3-1.7B-4bit", domain: str = "general"):
         """
