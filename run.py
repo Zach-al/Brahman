@@ -27,6 +27,8 @@ def _verify_sha256(filepath: Path, expected_hash: str) -> bool:
         return False
     return True
 
+BRAHMAN_ENV = os.environ.get("BRAHMAN_ENV", "development")
+
 def bootstrap_brain():
     print("🧠 Bootstrapper: Checking Persistent Volume...")
     
@@ -34,14 +36,21 @@ def bootstrap_brain():
     if not MODEL_PATH.exists():
         print(f"⚠️ Weights missing. Downloading 545MB model to {MODEL_PATH}...")
         subprocess.run(["wget", "-q", "--show-progress", "-O", str(MODEL_PATH), MODEL_URL], check=True)
-        # SECURITY: Verify artifact integrity if checksum is configured
+        # SECURITY: Verify artifact integrity — MANDATORY in production
         if MODEL_SHA256:
             if not _verify_sha256(MODEL_PATH, MODEL_SHA256):
                 MODEL_PATH.unlink()  # Delete compromised artifact
                 raise SystemExit("Aborting: Model artifact failed integrity check.")
             print("✅ Weights downloaded and integrity verified (SHA-256 match).")
+        elif BRAHMAN_ENV == "production":
+            MODEL_PATH.unlink()  # Don't keep unverified artifacts in production
+            raise SystemExit(
+                "✗ FATAL: BRAHMAN_MODEL_SHA256 is not set.\n"
+                "  Production mode requires mandatory artifact integrity verification.\n"
+                "  Set BRAHMAN_MODEL_SHA256 to the expected SHA-256 hash of the model file."
+            )
         else:
-            print("✅ Weights downloaded. ⚠ No BRAHMAN_MODEL_SHA256 set — skipping integrity check.")
+            print("✅ Weights downloaded. ⚠ No BRAHMAN_MODEL_SHA256 set — skipping integrity check (dev mode).")
     else:
         print("✅ Weights found on disk.")
 

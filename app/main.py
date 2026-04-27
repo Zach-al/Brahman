@@ -12,8 +12,10 @@ from pathlib import Path
 
 import torch
 from transformers import AutoTokenizer
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.db.sqlite_manager import SQLiteManager
 from app.core.panini_engine import PaniniEngine
@@ -28,6 +30,8 @@ db_manager: SQLiteManager = None
 device: torch.device = None
 dhatu_count: int = 0
 model_loaded: bool = False
+
+BRAHMAN_ENV = os.environ.get("BRAHMAN_ENV", "development")
 
 logger = logging.getLogger("brahman")
 logging.basicConfig(level=logging.INFO)
@@ -99,6 +103,22 @@ async def lifespan(app: FastAPI):
     logger.info("Brahman 2.0 Oracle shut down gracefully.")
 
 
+# ── Security Headers Middleware ──────────────────────────────────────────
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Inject enterprise security headers on every response."""
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+        if BRAHMAN_ENV == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+        return response
+
+
 # ── FastAPI App ──────────────────────────────────────────────────────────
 
 app = FastAPI(
@@ -112,9 +132,11 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — environment-configurable origin allowlist (no wildcards with credentials)
-import os as _os
-_cors_origins = _os.environ.get("BRAHMAN_CORS_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",")
+# SECURITY: HTTP hardening middleware stack
+app.add_middleware(SecurityHeadersMiddleware)
+
+# SECURITY: Restrict CORS to known origins (no wildcards with credentials)
+_cors_origins = os.environ.get("BRAHMAN_CORS_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
@@ -122,6 +144,11 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
+
+# SECURITY: Trusted host validation (configurable for production domains)
+_trusted_hosts = os.environ.get("BRAHMAN_TRUSTED_HOSTS", "*").split(",")
+if _trusted_hosts != ["*"]:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=_trusted_hosts)
 
 # ── Routes ───────────────────────────────────────────────────────────────
 app.include_router(verify.router)
@@ -139,10 +166,11 @@ async def root():
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])
 async def health_check():
+    """Public health check — intentionally sanitized (no internal device details)."""
     return HealthResponse(
         status="online",
         version="2.0.0",
         dhatus_loaded=dhatu_count,
-        device=str(device),
+        device="available",
         model_loaded=model_loaded
     )

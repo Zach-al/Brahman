@@ -215,6 +215,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+# SECURITY: HTTP Security Headers Middleware
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    """Inject enterprise security headers on every HTTP response."""
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Content-Security-Policy"] = "default-src 'self'; frame-ancestors 'none'"
+        if BRAHMAN_ENV == "production":
+            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
 # SECURITY: Restrict CORS to known origins in production.
 # Override BRAHMAN_CORS_ORIGINS env var with comma-separated origins.
 cors_origins = os.environ.get("BRAHMAN_CORS_ORIGINS", "http://localhost:3000,http://localhost:8420")

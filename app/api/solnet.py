@@ -2,11 +2,12 @@
 /v1/solnet — SOLNET Oracle Bridge endpoints.
 Provides Verification Certificates for decentralized intent validation.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from app.schemas.pydantic_models import (
     SolnetValidateRequest, VerificationCertificate, LinguisticViolationError
 )
+from app.security.auth import require_api_key
 
 router = APIRouter(prefix="/v1/solnet", tags=["solnet"])
 
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/v1/solnet", tags=["solnet"])
     "/validate",
     response_model=VerificationCertificate,
     summary="Validate a transaction intent for logical consistency",
+    dependencies=[Depends(require_api_key)],
     responses={
         422: {
             "model": LinguisticViolationError,

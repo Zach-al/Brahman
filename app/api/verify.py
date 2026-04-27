@@ -1,11 +1,12 @@
 """
 /v1/verify — Sanskrit sentence verification endpoint.
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from app.schemas.pydantic_models import (
     VerifyRequest, VerifyResponse, LinguisticViolationError
 )
+from app.security.auth import require_api_key
 
 router = APIRouter(prefix="/v1", tags=["verify"])
 
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/v1", tags=["verify"])
     "/verify",
     response_model=VerifyResponse,
     summary="Verify a Sanskrit sentence against Pāṇinian logic",
+    dependencies=[Depends(require_api_key)],
     responses={
         422: {
             "model": LinguisticViolationError,
