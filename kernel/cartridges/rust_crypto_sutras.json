@@ -21,10 +21,9 @@
     "update_oracle":    { "root": "oracle::update", "class": "oracle_op", "transitivity": "transitive", "meaning": "updates price feed from oracle" },
     "swap":             { "root": "amm::swap", "class": "defi_op", "transitivity": "ditransitive", "meaning": "swaps tokens via AMM pool" },
     "verify": {
-      "root": "signature_verification",
       "dhatu": "verify",
       "meaning": "Cryptographic proof validation",
-      "allowed_karakas": ["karta", "karma", "sampradana"]
+      "allowed_karakas": ["karta", "karma", "karana"]
     }
   },
 
