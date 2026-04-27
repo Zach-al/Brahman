@@ -173,7 +173,19 @@ class BrahmanKernel:
                 violations=["NO_CARTRIDGE: No Sūtra cartridge loaded."]
             )
 
-        graph = kp.get("karaka_protocol", kp.get("karaka_graph", {}))
+        # 1. Force FastAPI Pydantic models into raw dictionaries
+        if hasattr(kp, "model_dump"):
+            kp = kp.model_dump()
+        elif hasattr(kp, "dict"):
+            kp = kp.dict()
+
+        # 2. Extract safely, handling both naming conventions
+        graph = kp.get("karaka_protocol") or kp.get("karaka_graph") or {}
+        
+        # 3. Fallback: If the caller passed the graph directly instead of the envelope
+        if not graph and "kriya" in kp:
+            graph = kp
+
         violations: List[str] = []
         matched_sutras: List[str] = []
         trace: Dict = {}

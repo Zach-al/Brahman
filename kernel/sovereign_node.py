@@ -62,7 +62,7 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
         detail="Invalid or missing API Key"
     )
 CARTRIDGE_DIR = Path(__file__).parent / "cartridges"
-DEFAULT_CARTRIDGE = "sanskrit_sutras.json"
+DEFAULT_CARTRIDGE = "rust_crypto_sutras.json"
 
 # Global state
 kernel = BrahmanKernel()
