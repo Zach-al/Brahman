@@ -215,6 +215,16 @@ class BrahmanKernel:
                 logic_hash=self._hash(kp, Verdict.AMBIGUOUS)
             )
 
+        # ── Step 1.5: Transitivity Validation ─────────────────────
+        transitivity = root_entry.get("transitivity")
+        if transitivity in ["transitive", "ditransitive"] and not graph.get("karma"):
+            return VerificationResult(
+                verdict=Verdict.AMBIGUOUS,
+                dhatu_found=True,
+                violations=[f"MISSING_KARMA: '{resolved or surface}' is {transitivity} and requires an object (karma)."],
+                logic_hash=self._hash(kp, Verdict.AMBIGUOUS)
+            )
+
         trace["kriya"] = {
             "surface": surface,
             "resolved": resolved,

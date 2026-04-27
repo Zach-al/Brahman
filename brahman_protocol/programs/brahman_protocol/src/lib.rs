@@ -6,6 +6,10 @@ use anchor_lang::prelude::*;
 
 declare_id!("hkCmPnS4SRfniSuXhP9yyW55q1fj8xVEyeRcDzSRh6t");
 
+/// Authorized deployer — only this pubkey can call initialize_protocol.
+/// Replace with your actual deployer wallet address before mainnet.
+const AUTHORIZED_DEPLOYER: Pubkey = pubkey!("hkCmPnS4SRfniSuXhP9yyW55q1fj8xVEyeRcDzSRh6t");
+
 /// Brahman Verification Protocol — On-Chain Consensus Anchor
 ///
 /// Records off-chain Brahman Kernel verdicts on the Solana blockchain.
@@ -27,6 +31,12 @@ pub mod brahman_protocol {
         min_quorum: u8,
         quorum_threshold_bps: u16,
     ) -> Result<()> {
+        // SECURITY: Only the authorized deployer can initialize
+        require!(
+            ctx.accounts.admin.key() == AUTHORIZED_DEPLOYER,
+            BrahmanError::UnauthorizedInitialization
+        );
+
         let state = &mut ctx.accounts.protocol_state;
         state.admin = ctx.accounts.admin.key();
         state.min_quorum = min_quorum;
@@ -35,8 +45,31 @@ pub mod brahman_protocol {
         state.total_verdicts_valid = 0;
         state.total_verdicts_invalid = 0;
         state.total_verdicts_disputed = 0;
+        state.registered_node_count = 0;
 
         msg!("Brahman Protocol initialized. Quorum: {}/10000 bps", quorum_threshold_bps);
+        Ok(())
+    }
+
+    /// Register a node as an authorized validator. Admin only.
+    pub fn register_node(
+        ctx: Context<AdminAction>,
+        node_pubkey: Pubkey,
+    ) -> Result<()> {
+        let state = &mut ctx.accounts.protocol_state;
+        require!(
+            ctx.accounts.admin.key() == state.admin,
+            BrahmanError::Unauthorized
+        );
+        let idx = state.registered_node_count as usize;
+        require!(idx < 32, BrahmanError::MaxNodesReached);
+        // Prevent duplicate registration
+        for i in 0..idx {
+            require!(state.registered_nodes[i] != node_pubkey, BrahmanError::DuplicateNode);
+        }
+        state.registered_nodes[idx] = node_pubkey;
+        state.registered_node_count += 1;
+        msg!("Node registered: {}", node_pubkey);
         Ok(())
     }
 
@@ -69,6 +102,19 @@ pub mod brahman_protocol {
         verdict: u8,
     ) -> Result<()> {
         let record = &mut ctx.accounts.verification_record;
+        let state = &ctx.accounts.protocol_state;
+
+        // SECURITY: Only registered nodes can submit verdicts (anti-Sybil)
+        let signer = ctx.accounts.node_signer.key();
+        let node_count = state.registered_node_count as usize;
+        let mut is_registered = false;
+        for i in 0..node_count {
+            if state.registered_nodes[i] == signer {
+                is_registered = true;
+                break;
+            }
+        }
+        require!(is_registered, BrahmanError::UnauthorizedNode);
 
         // Reject if already finalized
         require!(record.quorum_status != 1, BrahmanError::AlreadyFinalized);
@@ -78,7 +124,6 @@ pub mod brahman_protocol {
         require!(idx < 10, BrahmanError::MaxVotesReached);
 
         // Reject duplicate votes from same node
-        let signer = ctx.accounts.node_signer.key();
         for i in 0..idx {
             require!(record.voter_pubkeys[i] != signer, BrahmanError::DuplicateVote);
         }
@@ -107,6 +152,12 @@ pub mod brahman_protocol {
         let record = &mut ctx.accounts.verification_record;
         let state = &mut ctx.accounts.protocol_state;
         let clock = Clock::get()?;
+
+        // SECURITY: Only admin can finalize verification records
+        require!(
+            ctx.accounts.authority.key() == state.admin,
+            BrahmanError::UnauthorizedFinalization
+        );
 
         // Must not be already finalized
         require!(record.quorum_status != 1, BrahmanError::AlreadyFinalized);
@@ -222,6 +273,25 @@ pub struct SubmitVerdict<'info> {
         bump,
     )]
     pub verification_record: Account<'info, VerificationRecord>,
+
+    #[account(
+        seeds = [b"brahman-protocol-state"],
+        bump,
+    )]
+    pub protocol_state: Account<'info, ProtocolState>,
+}
+
+#[derive(Accounts)]
+pub struct AdminAction<'info> {
+    #[account(mut)]
+    pub admin: Signer<'info>,
+
+    #[account(
+        mut,
+        seeds = [b"brahman-protocol-state"],
+        bump,
+    )]
+    pub protocol_state: Account<'info, ProtocolState>,
 }
 
 #[derive(Accounts)]
@@ -245,7 +315,6 @@ pub struct FinalizeVerification<'info> {
 // ─────────────────────────────────────────────────────────────
 
 #[account]
-#[derive(Default)]
 pub struct ProtocolState {
     pub admin: Pubkey,
     pub min_quorum: u8,
@@ -254,11 +323,29 @@ pub struct ProtocolState {
     pub total_verdicts_valid: u64,
     pub total_verdicts_invalid: u64,
     pub total_verdicts_disputed: u64,
+    pub registered_node_count: u8,
+    pub registered_nodes: [Pubkey; 32],
+}
+
+impl Default for ProtocolState {
+    fn default() -> Self {
+        Self {
+            admin: Pubkey::default(),
+            min_quorum: 0,
+            quorum_threshold_bps: 0,
+            total_verifications: 0,
+            total_verdicts_valid: 0,
+            total_verdicts_invalid: 0,
+            total_verdicts_disputed: 0,
+            registered_node_count: 0,
+            registered_nodes: [Pubkey::default(); 32],
+        }
+    }
 }
 
 impl ProtocolState {
-    // 8 (discriminator) + 32 + 1 + 2 + 8 + 8 + 8 + 8 = 75
-    pub const SPACE: usize = 8 + 32 + 1 + 2 + 8 + 8 + 8 + 8;
+    // 8 (discriminator) + 32 + 1 + 2 + 8 + 8 + 8 + 8 + 1 + (32*32) = 1100
+    pub const SPACE: usize = 8 + 32 + 1 + 2 + 8 + 8 + 8 + 8 + 1 + (32 * 32);
 }
 
 #[account]
@@ -318,4 +405,14 @@ pub enum BrahmanError {
     InsufficientVotes,
     #[msg("Unauthorized")]
     Unauthorized,
+    #[msg("Unauthorized initialization — deployer mismatch")]
+    UnauthorizedInitialization,
+    #[msg("Unauthorized node — not registered in protocol state")]
+    UnauthorizedNode,
+    #[msg("Unauthorized finalization — admin only")]
+    UnauthorizedFinalization,
+    #[msg("Maximum registered nodes reached (32)")]
+    MaxNodesReached,
+    #[msg("Node already registered")]
+    DuplicateNode,
 }
