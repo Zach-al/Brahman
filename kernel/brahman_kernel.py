@@ -349,12 +349,16 @@ class BrahmanKernel:
     @staticmethod
     def _evaluate_condition(condition: str, actual, expected) -> bool:
         """Pure logic gate. No domain knowledge."""
+        # --- BULLETPROOF COMPARISON BLOCK ---
+        expected_val = str(expected).strip().lower() if not isinstance(expected, list) else [str(x).strip().lower() for x in expected]
+        actual_val = str(actual).strip().lower() if actual is not None else "none"
+
         if condition == "equals":
-            return actual == expected
+            return actual_val == expected_val
         elif condition == "in":
-            return actual in expected if isinstance(expected, list) else actual == expected
+            return actual_val in expected_val if isinstance(expected_val, list) else actual_val == expected_val
         elif condition == "not_in":
-            return actual not in expected if isinstance(expected, list) else actual != expected
+            return actual_val not in expected_val if isinstance(expected_val, list) else actual_val != expected_val
         elif condition == "exists":
             return actual is not None
         elif condition == "requires":
