@@ -39,15 +39,15 @@ COPY --chown=brahman:brahman run.py .
 RUN mkdir -p /app/app/data && chown -R brahman:brahman /app
 
 # Expose ports
-EXPOSE 8420
 EXPOSE 8080
+EXPOSE 8420
 
 # SECURITY: Run as non-root user
 USER brahman
 
-# Health check
+# Health check (matches Oracle app port 8080)
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8420/health')" || exit 1
+    CMD python -c "import urllib.request, os; port = os.environ.get('PORT', '8080'); urllib.request.urlopen(f'http://localhost:{port}/health')" || exit 1
 
-# Default: start the Sovereign Node
-CMD ["python", "kernel/sovereign_node.py"]
+# Default: start the Oracle App (matches railway.toml)
+CMD ["python", "run.py"]

@@ -36,6 +36,7 @@
 | 13 | Container non-root | ✅ PASS | `Dockerfile` — `USER brahman` with dedicated group |
 | 14 | Multi-stage build | ✅ PASS | `build-essential` not in runtime image |
 | 15 | TrustedHostMiddleware | ✅ PASS | Configurable via `BRAHMAN_TRUSTED_HOSTS` |
+| 16 | Healthcheck alignment | ✅ PASS | `Dockerfile` CMD and HEALTHCHECK align with `railway.toml` (`run.py` on 8080) |
 
 ## P2 Controls (Operations)
 
@@ -49,8 +50,8 @@
 
 | Risk | Severity | Rationale | Review Date |
 |------|----------|-----------|-------------|
-| `RUSTSEC-2024-0344` curve25519-dalek 3.2.1 | HIGH | Transitive via `anchor-lang` — no direct upgrade path until Anchor updates. Compensating control: on-chain authorization guards prevent exploitation. | 2026-07-28 |
-| JS dev-dependency vulns (mocha, minimatch, etc.) | MEDIUM | All 11 findings are in test/dev toolchain, not runtime. Not shipped in Docker image. | 2026-07-28 |
+| `RUSTSEC-2024-0344` curve25519-dalek 3.2.1 | HIGH | Transitive via `anchor-lang` — no direct upgrade path. Formally ignored in `.cargo/audit.toml`. Compensating control: on-chain authorization guards prevent exploitation. | 2026-07-28 |
+| JS dev-dependency vulns (serialize-javascript, etc.) | HIGH/MODERATE | Reduced from 11 to 5 via `yarn` resolutions. All remaining are strictly in the test/dev toolchain (`devDependencies`) and never shipped in the production Docker runtime. | 2026-07-28 |
 | Python dependency audit incomplete | LOW | `pip-audit` not run in CI yet. Manual review shows no known CVEs in runtime deps. | 2026-06-28 |
 
 ## Required Production Environment Variables

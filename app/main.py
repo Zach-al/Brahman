@@ -147,6 +147,11 @@ app.add_middleware(
 
 # SECURITY: Trusted host validation (configurable for production domains)
 _trusted_hosts = os.environ.get("BRAHMAN_TRUSTED_HOSTS", "*").split(",")
+if BRAHMAN_ENV == "production" and _trusted_hosts == ["*"]:
+    raise SystemExit(
+        "✗ FATAL: BRAHMAN_TRUSTED_HOSTS cannot be '*' in production.\n"
+        "  Set explicit allowed hosts via BRAHMAN_TRUSTED_HOSTS environment variable."
+    )
 if _trusted_hosts != ["*"]:
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=_trusted_hosts)
 
