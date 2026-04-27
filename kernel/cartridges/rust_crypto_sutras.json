@@ -19,10 +19,25 @@
     "borrow":           { "root": "lending::borrow", "class": "defi_op", "transitivity": "ditransitive", "meaning": "borrows against collateral" },
     "liquidate":        { "root": "lending::liquidate", "class": "defi_op", "transitivity": "ditransitive", "meaning": "liquidates undercollateralized position" },
     "update_oracle":    { "root": "oracle::update", "class": "oracle_op", "transitivity": "transitive", "meaning": "updates price feed from oracle" },
-    "swap":             { "root": "amm::swap", "class": "defi_op", "transitivity": "ditransitive", "meaning": "swaps tokens via AMM pool" }
+    "swap":             { "root": "amm::swap", "class": "defi_op", "transitivity": "ditransitive", "meaning": "swaps tokens via AMM pool" },
+    "verify": {
+      "root": "signature_verification",
+      "dhatu": "verify",
+      "meaning": "Cryptographic proof validation",
+      "allowed_karakas": ["karta", "karma", "sampradana"]
+    }
   },
 
   "sutras": [
+    {
+      "id": "WH-001",
+      "target_role": "karana",
+      "field": "instruction_sysvar_account",
+      "condition": "equals",
+      "expected": "Sysvar1nstruction1111111111111111111111111",
+      "severity": "error",
+      "description": "Cross-program invocation must verify the legitimate Solana Sysvar Instructions account to prevent signature spoofing."
+    },
     {
       "id": "RC-001",
       "description": "Token transfer requires a verified signer (agent must have authority)",
