@@ -7,8 +7,9 @@ use anchor_lang::prelude::*;
 declare_id!("hkCmPnS4SRfniSuXhP9yyW55q1fj8xVEyeRcDzSRh6t");
 
 /// Authorized deployer — only this pubkey can call initialize_protocol.
-/// Replace with your actual deployer wallet address before mainnet.
-const AUTHORIZED_DEPLOYER: Pubkey = pubkey!("hkCmPnS4SRfniSuXhP9yyW55q1fj8xVEyeRcDzSRh6t");
+/// DEPLOYMENT CHECKLIST: Verify this matches your deployer wallet before each deploy.
+/// Current: Bhupen's dev wallet (EBZFNFHD3riawGyPgVm9fVNGE8aDGoEcW77jrRHdRCz9)
+const AUTHORIZED_DEPLOYER: Pubkey = pubkey!("EBZFNFHD3riawGyPgVm9fVNGE8aDGoEcW77jrRHdRCz9");
 
 /// Brahman Verification Protocol — On-Chain Consensus Anchor
 ///

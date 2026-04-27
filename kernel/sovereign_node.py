@@ -38,9 +38,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Optional, List, Dict
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Security, Query, status
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Security, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security.api_key import APIKeyHeader
+from starlette.middleware.base import BaseHTTPMiddleware
 from pydantic import BaseModel, Field
 
 import sys
@@ -127,6 +128,32 @@ class RateLimiter:
 rate_limiter = RateLimiter(max_requests=10, window_seconds=1.0)
 
 
+async def rate_limit_dependency(request: Request):
+    """FastAPI dependency for HTTP rate limiting."""
+    client_ip = request.client.host if request.client else "unknown"
+    if not rate_limiter.allow(client_ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded. Max 10 requests/sec."
+        )
+
+
+class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
+    """Reject HTTP request bodies larger than max_bytes (default 1MB)."""
+    def __init__(self, app, max_bytes: int = 1_048_576):
+        super().__init__(app)
+        self.max_bytes = max_bytes
+
+    async def dispatch(self, request: Request, call_next):
+        content_length = request.headers.get("content-length")
+        if content_length and int(content_length) > self.max_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"Request body too large. Max {self.max_bytes} bytes."
+            )
+        return await call_next(request)
+
+
 # ══════════════════════════════════════════════════════════════════
 # PYDANTIC MODELS
 # ══════════════════════════════════════════════════════════════════
@@ -199,6 +226,9 @@ app.add_middleware(
     allow_headers=["Content-Type", "X-API-Key"],
 )
 
+# SECURITY: Request body size limit (1MB)
+app.add_middleware(RequestSizeLimitMiddleware, max_bytes=1_048_576)
+
 
 # ══════════════════════════════════════════════════════════════════
 # ENDPOINTS
@@ -237,17 +267,24 @@ async def list_cartridges():
     return {"cartridges": cartridges, "loaded": kernel.loaded_domain}
 
 
-@app.post("/cartridge/load", dependencies=[Depends(get_api_key)])
+@app.post("/cartridge/load", dependencies=[Depends(get_api_key), Depends(rate_limit_dependency)])
 async def load_cartridge(req: LoadCartridgeRequest):
     """Hot-swap a Sūtra cartridge at runtime."""
-    path = CARTRIDGE_DIR / req.cartridge
+    # SECURITY: Path traversal guard — enforce basename-only, .json extension,
+    # and canonical path must remain within the cartridges directory.
+    basename = Path(req.cartridge).name
+    if not basename.endswith(".json") or basename != req.cartridge:
+        raise HTTPException(status_code=400, detail="Invalid cartridge name. Must be a .json basename (no paths).")
+    path = (CARTRIDGE_DIR / basename).resolve()
+    if not path.is_relative_to(CARTRIDGE_DIR.resolve()):
+        raise HTTPException(status_code=403, detail="Path traversal denied.")
     if not path.exists():
-        raise HTTPException(status_code=404, detail=f"Cartridge '{req.cartridge}' not found.")
+        raise HTTPException(status_code=404, detail=f"Cartridge '{basename}' not found.")
     msg = kernel.load_cartridge(str(path))
     return {"status": "loaded", "message": msg, "domain": kernel.loaded_domain}
 
 
-@app.post("/verify", response_model=VerifyResponse, dependencies=[Depends(get_api_key)])
+@app.post("/verify", response_model=VerifyResponse, dependencies=[Depends(get_api_key), Depends(rate_limit_dependency)])
 async def verify_text(req: VerifyRequest):
     """
     Verify raw text through the full pipeline:
@@ -301,7 +338,7 @@ async def verify_text(req: VerifyRequest):
     )
 
 
-@app.post("/verify/kp", response_model=VerifyResponse, dependencies=[Depends(get_api_key)])
+@app.post("/verify/kp", response_model=VerifyResponse, dependencies=[Depends(get_api_key), Depends(rate_limit_dependency)])
 async def verify_kp(req: KPVerifyRequest):
     """
     Verify a pre-built Kāraka Protocol instance directly.
@@ -333,20 +370,30 @@ async def verify_kp(req: KPVerifyRequest):
 # ══════════════════════════════════════════════════════════════════
 
 @app.websocket("/ws/verify")
-async def ws_verify(websocket: WebSocket, api_key: str = Query(None)):
+async def ws_verify(websocket: WebSocket):
     """
     WebSocket endpoint for streaming verification.
-    Requires API key as query parameter: ws://host:port/ws/verify?api_key=YOUR_KEY
-    Send JSON: {"raw_input": "...", "domain": "..."} and receive
-    the verdict back in real-time.
+    Auth: Send {"type": "auth", "api_key": "..."} as the FIRST message.
+    Then send {"raw_input": "...", "domain": "..."} for verification.
+    API key is never exposed in query strings or proxy logs.
     """
-    # SECURITY: Authenticate WebSocket connections
-    if api_key != API_KEY:
-        await websocket.close(code=1008)  # Policy Violation
-        return
-
     await websocket.accept()
     client_ip = websocket.client.host if websocket.client else "unknown"
+
+    # SECURITY: First-message authentication protocol.
+    # The client must send an auth payload before any verification requests.
+    try:
+        auth_data = await asyncio.wait_for(websocket.receive_json(), timeout=5.0)
+    except (asyncio.TimeoutError, Exception):
+        await websocket.close(code=1008, reason="Auth timeout")
+        return
+
+    if auth_data.get("type") != "auth" or auth_data.get("api_key") != API_KEY:
+        await websocket.send_json({"error": "AUTH_FAILED", "detail": "Invalid or missing API key."})
+        await websocket.close(code=1008, reason="Auth failed")
+        return
+
+    await websocket.send_json({"type": "auth_ok", "node_id": NODE_ID})
     print(f"[{NODE_ID}] WebSocket client connected (authenticated, ip={client_ip}).")
 
     try:

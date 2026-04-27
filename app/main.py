@@ -112,13 +112,15 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow the Playground frontend and SOLNET nodes
+# CORS — environment-configurable origin allowlist (no wildcards with credentials)
+import os as _os
+_cors_origins = _os.environ.get("BRAHMAN_CORS_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Lock down in production
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
 # ── Routes ───────────────────────────────────────────────────────────────

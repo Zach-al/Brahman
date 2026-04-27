@@ -1,5 +1,6 @@
 import os
 import subprocess
+import hashlib as _hashlib
 import uvicorn
 from pathlib import Path
 
@@ -9,6 +10,22 @@ DB_PATH = DATA_DIR / "brahman_v2.db"
 
 # The direct binary download link for the 545MB weights
 MODEL_URL = "https://github.com/Zach-al/Brahman/releases/download/v2.0.0/brahman_v2_core.pth"
+# SECURITY: SHA-256 checksum of the expected model artifact.
+# Update this hash whenever you publish a new model release.
+MODEL_SHA256 = os.environ.get("BRAHMAN_MODEL_SHA256", "")
+
+def _verify_sha256(filepath: Path, expected_hash: str) -> bool:
+    """Verify file integrity via SHA-256."""
+    sha = _hashlib.sha256()
+    with open(filepath, "rb") as f:
+        for chunk in iter(lambda: f.read(8192), b""):
+            sha.update(chunk)
+    actual = sha.hexdigest()
+    if actual != expected_hash:
+        print(f"✗ INTEGRITY FAILURE: Expected SHA-256 {expected_hash}")
+        print(f"  Actual SHA-256: {actual}")
+        return False
+    return True
 
 def bootstrap_brain():
     print("🧠 Bootstrapper: Checking Persistent Volume...")
@@ -16,9 +33,15 @@ def bootstrap_brain():
     # 1. Check and download Weights
     if not MODEL_PATH.exists():
         print(f"⚠️ Weights missing. Downloading 545MB model to {MODEL_PATH}...")
-        # Using -q --show-progress makes the Railway logs much cleaner to read
         subprocess.run(["wget", "-q", "--show-progress", "-O", str(MODEL_PATH), MODEL_URL], check=True)
-        print("✅ Weights downloaded successfully.")
+        # SECURITY: Verify artifact integrity if checksum is configured
+        if MODEL_SHA256:
+            if not _verify_sha256(MODEL_PATH, MODEL_SHA256):
+                MODEL_PATH.unlink()  # Delete compromised artifact
+                raise SystemExit("Aborting: Model artifact failed integrity check.")
+            print("✅ Weights downloaded and integrity verified (SHA-256 match).")
+        else:
+            print("✅ Weights downloaded. ⚠ No BRAHMAN_MODEL_SHA256 set — skipping integrity check.")
     else:
         print("✅ Weights found on disk.")
 
