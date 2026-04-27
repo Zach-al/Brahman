@@ -1,12 +1,10 @@
 # Brahman — Universal Neuro-Symbolic Verification Engine
 
-> *The OS of Logic: Deterministic verification through Pāṇinian gate traversal.*
+**Brahman** is a domain-agnostic verification kernel that combines formal grammar systems with modern neuro-symbolic AI to produce deterministic, zero-hallucination logic verdicts.
 
-**Brahman** is a domain-agnostic verification kernel that combines a 2,500-year-old formal grammar system (Pāṇini's *Aṣṭādhyāyī*) with modern neuro-symbolic AI to produce **mathematically provable, zero-hallucination logic verdicts**.
+The engine translates problems (smart contract audits, biochemical reactions, formal logic, memory safety) into a universal **Kāraka Protocol** graph, then verifies it against domain-specific **Sūtra cartridges** using state-machine traversal.
 
-The engine translates any problem — smart contract audits, biochemical reactions, formal logic, memory safety — into a universal **Kāraka Protocol** graph, then verifies it against domain-specific **Sūtra cartridges** using pure state-machine traversal.
-
-Every verdict is cryptographically sealed with a **Logic Hash** (SHA-256 of the full traversal path), making results auditable, reproducible, and forgery-proof.
+Every verdict is cryptographically sealed with a **Logic Hash** (SHA-256 of the full traversal path), making results auditable and reproducible.
 
 ---
 
@@ -48,31 +46,42 @@ Every verdict is cryptographically sealed with a **Logic Hash** (SHA-256 of the 
 
 ---
 
+## Security Architecture
+
+Brahman is hardened for enterprise production environments:
+
+- **Authentication**: All API and WebSocket endpoints enforce strict API key validation (`X-API-Key` header / first-message WS auth protocol). Startup aborts in production if keys are missing or default.
+- **Model Integrity**: Supply-chain protection via SHA-256 checksum verification (`BRAHMAN_MODEL_SHA256`). Mismatched or compromised weights are automatically deleted, failing-closed on startup.
+- **HTTP Hardening**: Native enforcement of HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, and X-XSS-Protection headers. 
+- **Rate Limiting & Abuse Prevention**: Sliding-window rate limiters (10 req/sec per IP) and strict 1MB request body size limits.
+- **Container Security**: Multi-stage Docker builds running under a non-root `brahman` user, stripped of build-time dependencies, with granular file ownership and healthchecks.
+- **Path Traversal Guards**: Strict basename validation and path resolution restrictions on hot-swappable cartridge endpoints.
+
+---
+
 ## Core Components
 
 ### 1. Brahman Kernel — `kernel/brahman_kernel.py`
 
-The kernel is **completely domain-blind**. It does not know what a "smart contract" or "protein" is. It only knows mathematics and syntax:
+The kernel is **completely domain-blind**. It only evaluates graph syntax:
 
 1. Read a Kāraka Protocol graph
 2. Load a Sūtra cartridge (domain rules)
 3. For each node, check if connections are **legal** according to the loaded rules
 4. Output: `VALID` / `INVALID` / `AMBIGUOUS` + Logic Hash
 
-**The kernel never changes. You swap the cartridge.**
-
 ### 2. Kāraka Protocol — `kernel/karaka_protocol.schema.json`
 
 The universal intermediate representation. Every problem must be translated into exactly **six semantic roles** (kārakas):
 
-| Role | Sanskrit | Meaning | Example |
-|------|----------|---------|---------|
-| **Kriyā** | क्रिया | Action/Operation | `transfer`, `phosphorylate`, `entails` |
-| **Kartā** | कर्ता | Agent | signer, enzyme, premise |
-| **Karma** | कर्म | Target/Patient | escrow, substrate, conclusion |
-| **Karaṇa** | करण | Instrument | amount, ATP, oracle price |
-| **Sampradāna** | सम्प्रदान | Recipient | destination wallet, product |
-| **Adhikaraṇa** | अधिकरण | Environment | Solana mainnet, pH 7.4, vacuum |
+| Role | Meaning | Example |
+|------|---------|---------|
+| **Kriyā** | Action/Operation | `transfer`, `phosphorylate`, `entails` |
+| **Kartā** | Agent | signer, enzyme, premise |
+| **Karma** | Target/Patient | escrow, substrate, conclusion |
+| **Karaṇa** | Instrument | amount, ATP, oracle price |
+| **Sampradāna** | Recipient | destination wallet, product |
+| **Adhikaraṇa** | Environment | Solana mainnet, pH 7.4, vacuum |
 
 ### 3. MLX Neural Translator — `kernel/mlx_translator.py`
 
@@ -128,29 +137,11 @@ The engine was tested against the **three largest Solana exploits in history**. 
 | **Mango Markets** | Oct 2022 | $114M | Oracle price manipulation via self-trading — used spot price instead of TWAP | RC-008, RC-009, RC-010 |
 | **Cashio Collapse** | Mar 2022 | $52M | Fake collateral account bypassed incomplete verification chain | RC-004, RC-011, RC-012 |
 
-**The engine correctly identifies patterns behind $492,000,000 in historical exploits** — Run: `python3 kernel/crucible_test.py`
+Run: `python3 kernel/crucible_test.py`
 
 ---
 
-## Mesh Consensus — Why BFT Is Unnecessary
-
-Traditional blockchain consensus (PBFT, Tendermint) requires O(n²) message rounds because nodes are non-deterministic. Brahman eliminates this overhead:
-
-**Same input + same cartridge = same SHA-256 logic hash. Always.**
-
-- **Honest nodes** → identical hashes → instant quorum (single round)
-- **Malicious node** spoofs a hash → doesn't match → rejected, agreement rate → 0%, flagged for slashing
-- **All disagree** (cartridge mismatch) → `DISPUTED`, transaction held for manual review
-
-```
-Node A: verify(tx) → INVALID, hash=49e6fd6c...  ┐
-Node B: verify(tx) → INVALID, hash=49e6fd6c...  ├→ 2/3 agree → FINALIZED: INVALID
-Node C: verify(tx) → VALID,   hash=deadbeef...  ┘   (C rejected, slashed)
-```
-
----
-
-## Test Suite — 52 Tests, All Passing
+## Test Suite
 
 ```
 Kernel self-test ........ 6/6   ✓   (Sanskrit, Rust/Crypto, Thermodynamics)
@@ -173,7 +164,7 @@ python3 kernel/validator/test_validator.py
 
 ## Quick Start
 
-### Local (Apple Silicon)
+### Local 
 
 ```bash
 # Clone
@@ -183,27 +174,15 @@ cd Brahman
 # Install dependencies
 pip install fastapi uvicorn
 
-# Run the kernel self-test
+# Setup environment variables
+export BRAHMAN_API_KEY="your-secret-key"
+
+# Run tests
 python3 kernel/test_kernel.py
-
-# Run the Crucible Test (historical exploit detection)
 python3 kernel/crucible_test.py
-
-# Run the validator mesh test
 python3 kernel/validator/test_validator.py
 
-# Start the Sovereign Node (port 8420)
-python3 kernel/sovereign_node.py
-```
-
-### With MLX Neural Translator (Apple Silicon only)
-
-```bash
-# Install MLX dependencies
-pip install mlx mlx-lm transformers tokenizers numpy
-
-# The translator auto-downloads Qwen3-1.7B-4bit on first use
-# Start the Sovereign Node — MLX loads lazily on first /verify call
+# Start the Sovereign Node
 python3 kernel/sovereign_node.py
 ```
 
@@ -211,7 +190,7 @@ python3 kernel/sovereign_node.py
 
 ```bash
 docker build -t brahman .
-docker run -p 8420:8420 brahman
+docker run -p 8080:8080 -p 8420:8420 -e BRAHMAN_API_KEY="secret" brahman
 ```
 
 ### API Usage
@@ -220,17 +199,10 @@ docker run -p 8420:8420 brahman
 # Health check
 curl http://localhost:8420/health
 
-# List cartridges
-curl http://localhost:8420/cartridges
-
-# Hot-swap to rust_crypto domain
-curl -X POST http://localhost:8420/cartridge/load \
-  -H "Content-Type: application/json" \
-  -d '{"cartridge": "rust_crypto_sutras.json"}'
-
 # Verify a pre-built Kāraka Protocol graph
 curl -X POST http://localhost:8420/verify/kp \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: your-secret-key" \
   -d '{
     "karaka_protocol": {
       "protocol_version": "1.0.0",
@@ -247,71 +219,6 @@ curl -X POST http://localhost:8420/verify/kp \
 
 ---
 
-## Brahman-1 Research Model
-
-The `/brahman1` directory contains the original Pāṇinian neural research model:
-
-| Module | Purpose |
-|--------|---------|
-| `tokenizer.py` | Pāṇinian Lexer — parses input into AST with Dhātu operators and Vibhakti-bound variables |
-| `model.py` | Vibhakti Attention — custom sparse grammar mask that prevents hallucinated cross-attention |
-| `dataset.py` | Synthetic Logic Generator — mathematically perfect syllogisms paired with Pāṇinian ASTs |
-| `train.py` | 3-phase curriculum trainer optimized for Apple Silicon (MPS) and NVIDIA (CUDA+AMP) |
-| `training/dataset/synthetic_gen.py` | Advanced fallacy generators (undistributed middle, illicit major, circular reasoning) |
-
----
-
-## Project Structure
-
-```
-Brahman/
-├── kernel/                          # Universal Verification Engine
-│   ├── brahman_kernel.py            # The domain-blind verification kernel
-│   ├── karaka_protocol.schema.json  # Kāraka Protocol JSON schema v1.0.0
-│   ├── mlx_translator.py            # MLX Qwen3-1.7B neural translator
-│   ├── sovereign_node.py            # FastAPI/WebSocket RPC server
-│   ├── crucible_test.py             # Historical exploit verification
-│   ├── test_kernel.py               # Kernel self-test
-│   ├── stress_test.py               # Multi-domain stress test
-│   ├── cartridges/                  # Domain rule sets (hot-swappable)
-│   │   ├── sanskrit_sutras.json     # Pāṇinian grammar (4 sūtras)
-│   │   ├── rust_crypto_sutras.json  # Solana/DeFi security (12 sūtras)
-│   │   ├── formal_logic_sutras.json # Propositional logic (12 sūtras)
-│   │   ├── memory_safety_sutras.json# Systems security (12 sūtras)
-│   │   ├── biochem_sutras.json      # Biochemistry (12 sūtras)
-│   │   └── thermo_sutras.json       # Thermodynamics (4 sūtras)
-│   └── validator/                   # Mesh Consensus Layer
-│       ├── validator_client.py      # Off-chain verification daemon
-│       ├── tx_deserializer.py       # Solana TX → KP graph
-│       ├── mesh_consensus.py        # Hash-based quorum consensus
-│       ├── verification_protocol.py # On-chain VerificationRecord PDA
-│       └── test_validator.py        # 30 integration tests
-├── brahman1/                        # Pāṇinian neural research model
-│   ├── training/                    # Training pipeline
-│   └── models/                      # Saved checkpoints
-├── Dockerfile                       # Container deployment
-├── requirements.txt                 # Python dependencies
-└── README.md                        # This file
-```
-
----
-
-## Technical Design Decisions
-
-1. **Circuit-Breaker Pattern**: If the neural translator produces input that doesn't resolve to a known root in the active cartridge, the kernel returns `AMBIGUOUS` and halts — never guesses.
-
-2. **Skip-if-Absent**: Sūtras only trigger when their target kāraka role is present in the graph. Missing fields are treated as sparse data, not automatic violations.
-
-3. **Decoupled Architecture**: Logic is separated into Cartridges (rules), Kernel (verifier), and Translator (input adapter). Swap any layer independently.
-
-4. **Deterministic Consensus**: The kernel is a pure state machine — same input + same cartridge = same logic hash. This eliminates the need for expensive BFT protocols.
-
----
-
 ## License
 
 MIT
-
----
-
-*Language shapes thought. Formal language enforces formal reasoning.*
