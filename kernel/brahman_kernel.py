@@ -173,7 +173,7 @@ class BrahmanKernel:
                 violations=["NO_CARTRIDGE: No Sūtra cartridge loaded."]
             )
 
-        graph = kp.get("karaka_graph", {})
+        graph = kp.get("karaka_protocol", kp.get("karaka_graph", {}))
         violations: List[str] = []
         matched_sutras: List[str] = []
         trace: Dict = {}
@@ -359,7 +359,7 @@ class BrahmanKernel:
         """
         payload = json.dumps({
             "input": kp.get("claim", {}).get("raw_input", ""),
-            "graph": kp.get("karaka_graph", {}),
+            "graph": kp.get("karaka_protocol", kp.get("karaka_graph", {})),
             "verdict": verdict
         }, sort_keys=True, ensure_ascii=False)
         return hashlib.sha256(payload.encode("utf-8")).hexdigest()
