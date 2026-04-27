@@ -32,6 +32,9 @@ import json
 import time
 import hashlib
 import asyncio
+import sys
+import secrets
+from collections import defaultdict
 from pathlib import Path
 from typing import Optional, List, Dict
 from contextlib import asynccontextmanager
@@ -51,13 +54,29 @@ from brahman_kernel import BrahmanKernel, Verdict, VerificationResult
 
 NODE_ID = os.environ.get("BRAHMAN_NODE_ID", f"sovereign-{hashlib.sha256(os.urandom(8)).hexdigest()[:8]}")
 
-# SECURITY: No predictable fallbacks. Generate secure random key if not set.
+# SECURITY: Enforce secure API key. Refuse to start in production without one.
+BRAHMAN_ENV = os.environ.get("BRAHMAN_ENV", "development")
 API_KEY = os.environ.get("BRAHMAN_API_KEY")
+
 if not API_KEY:
-    import secrets
-    API_KEY = secrets.token_hex(32)
-    print(f"⚠ WARNING: BRAHMAN_API_KEY not set. Generated temporary key: {API_KEY}")
-    print(f"  Set BRAHMAN_API_KEY env var for production use.")
+    if BRAHMAN_ENV == "production":
+        print("\n✗ FATAL: BRAHMAN_API_KEY is not set.")
+        print("  Production mode requires an explicit API key.")
+        print("  Set it with: export BRAHMAN_API_KEY=$(python3 -c 'import secrets; print(secrets.token_hex(32))')")
+        sys.exit(1)
+    else:
+        API_KEY = secrets.token_hex(32)
+        print(f"⚠ WARNING: BRAHMAN_API_KEY not set (env={BRAHMAN_ENV}). Generated temporary key:")
+        print(f"  {API_KEY}")
+        print(f"  This key is ephemeral and will change on restart.")
+
+DEFAULT_KEYS = {"brahman-dev-secret-key-123", "test", "dev", "password", "secret"}
+if API_KEY in DEFAULT_KEYS:
+    if BRAHMAN_ENV == "production":
+        print(f"\n✗ FATAL: API key is a known default ('{API_KEY}'). This is not allowed in production.")
+        sys.exit(1)
+    else:
+        print(f"⚠ WARNING: API key matches a known default. Do NOT use this in production.")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
@@ -76,6 +95,36 @@ translator = None  # Lazy-loaded MLX translator
 node_start_time = time.time()
 request_count = 0
 verified_count = {"VALID": 0, "INVALID": 0, "AMBIGUOUS": 0}
+
+
+# ══════════════════════════════════════════════════════════════════
+# RATE LIMITER
+# ══════════════════════════════════════════════════════════════════
+
+class RateLimiter:
+    """
+    Sliding-window rate limiter.
+    Tracks request timestamps per client IP. Rejects requests that
+    exceed the configured requests-per-second threshold.
+    """
+    def __init__(self, max_requests: int = 10, window_seconds: float = 1.0):
+        self.max_requests = max_requests
+        self.window = window_seconds
+        self._buckets: Dict[str, list] = defaultdict(list)
+
+    def allow(self, client_id: str) -> bool:
+        now = time.time()
+        bucket = self._buckets[client_id]
+        # Evict expired entries
+        self._buckets[client_id] = [t for t in bucket if now - t < self.window]
+        bucket = self._buckets[client_id]
+        if len(bucket) >= self.max_requests:
+            return False
+        bucket.append(now)
+        return True
+
+# 10 requests per second per client (HTTP + WS)
+rate_limiter = RateLimiter(max_requests=10, window_seconds=1.0)
 
 
 # ══════════════════════════════════════════════════════════════════
@@ -297,11 +346,22 @@ async def ws_verify(websocket: WebSocket, api_key: str = Query(None)):
         return
 
     await websocket.accept()
-    print(f"[{NODE_ID}] WebSocket client connected (authenticated).")
+    client_ip = websocket.client.host if websocket.client else "unknown"
+    print(f"[{NODE_ID}] WebSocket client connected (authenticated, ip={client_ip}).")
 
     try:
         while True:
             data = await websocket.receive_json()
+
+            # SECURITY: Per-IP rate limiting
+            if not rate_limiter.allow(client_ip):
+                await websocket.send_json({
+                    "error": "RATE_LIMITED",
+                    "detail": "Too many requests. Max 10/sec.",
+                    "timestamp": time.time(),
+                })
+                continue
+
             raw_input = data.get("raw_input", "")
             domain = data.get("domain", kernel.loaded_domain)
 

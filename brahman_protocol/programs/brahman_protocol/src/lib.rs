@@ -283,7 +283,10 @@ pub struct SubmitVerdict<'info> {
 
 #[derive(Accounts)]
 pub struct AdminAction<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = admin.key() == protocol_state.admin @ BrahmanError::Unauthorized
+    )]
     pub admin: Signer<'info>,
 
     #[account(
@@ -296,7 +299,10 @@ pub struct AdminAction<'info> {
 
 #[derive(Accounts)]
 pub struct FinalizeVerification<'info> {
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = authority.key() == protocol_state.admin @ BrahmanError::UnauthorizedFinalization
+    )]
     pub authority: Signer<'info>,
 
     #[account(mut)]
