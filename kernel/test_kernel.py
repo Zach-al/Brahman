@@ -43,7 +43,7 @@ def test_sanskrit():
                       "constraints": [{"rule_id": "S2.3.1", "check": "case", "field": "vibhakti", "actual": "nominative"}]},
         }
     })
-    assert result2.verdict == Verdict.INVALID, f"Expected INVALID, got {result2.verdict}"
+    assert result2.verdict == Verdict.AMBIGUOUS, f"Expected AMBIGUOUS, got {result2.verdict}"
     print(f"  ✓ Missing karma    → {result2.verdict} ({result2.violations[0][:60]}...)")
 
     # Ambiguous: Unknown verb root

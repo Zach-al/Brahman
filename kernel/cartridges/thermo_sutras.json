@@ -10,7 +10,7 @@
     "compresses":  { "root": "thermo::PdV-", "class": "work", "transitivity": "transitive", "meaning": "decreases volume" },
     "melts":       { "root": "thermo::phase_s_l", "class": "phase_change", "transitivity": "intransitive", "meaning": "solid to liquid transition" },
     "freezes":     { "root": "thermo::phase_l_s", "class": "phase_change", "transitivity": "intransitive", "meaning": "liquid to solid transition" },
-    "combusts":    { "root": "chem::oxidation", "class": "reaction", "transitivity": "transitive", "meaning": "rapid exothermic oxidation" },
+    "combusts":    { "root": "chem::oxidation", "class": "reaction", "transitivity": "intransitive", "meaning": "rapid exothermic oxidation" },
     "catalyzes":   { "root": "chem::catalyst", "class": "reaction", "transitivity": "ditransitive", "meaning": "lowers activation energy" }
   },
 
