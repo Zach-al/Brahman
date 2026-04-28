@@ -24,6 +24,11 @@
       "dhatu": "verify",
       "meaning": "Cryptographic proof validation",
       "allowed_karakas": ["karta", "karma", "karana"]
+    },
+    "read_state": {
+      "dhatu": "read",
+      "meaning": "Read blockchain state without mutation",
+      "allowed_karakas": ["karta", "karma"]
     }
   },
 
