@@ -33,8 +33,20 @@ def bootstrap_brain():
     print("🧠 Bootstrapper: Checking Persistent Volume...")
     
     # 1. Check and download Weights
+    if MODEL_PATH.exists():
+        if MODEL_SHA256:
+            print(f"🔍 Verifying existing weights at {MODEL_PATH}...")
+            if not _verify_sha256(MODEL_PATH, MODEL_SHA256):
+                print("⚠️ Existing weights are corrupt. Deleting and re-downloading...")
+                MODEL_PATH.unlink()
+            else:
+                print("✅ Existing weights verified (SHA-256 match).")
+        elif MODEL_PATH.stat().st_size == 0:
+            print("⚠️ Existing weights file is empty. Deleting and re-downloading...")
+            MODEL_PATH.unlink()
+
     if not MODEL_PATH.exists():
-        print(f"⚠️ Weights missing. Downloading 545MB model to {MODEL_PATH}...")
+        print(f"⚠️ Weights missing or corrupt. Downloading 545MB model to {MODEL_PATH}...")
         subprocess.run(["wget", "-q", "--show-progress", "-O", str(MODEL_PATH), MODEL_URL], check=True)
         # SECURITY: Verify artifact integrity — MANDATORY in production
         if MODEL_SHA256:
