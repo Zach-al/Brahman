@@ -26,8 +26,8 @@ if not API_KEY:
         print("  Production mode requires an explicit API key.")
         sys.exit(1)
     else:
-        API_KEY = secrets.token_hex(32)
-        print(f"⚠ [app] BRAHMAN_API_KEY not set (env={BRAHMAN_ENV}). Temporary key: {API_KEY}")
+        API_KEY = "brahman-dev-secret-key-123"
+        print(f"⚠ [app] BRAHMAN_API_KEY not set (env={BRAHMAN_ENV}). Using default dev key: {API_KEY}")
 
 _DEFAULT_KEYS = {"brahman-dev-secret-key-123", "test", "dev", "password", "secret"}
 if API_KEY in _DEFAULT_KEYS:

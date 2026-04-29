@@ -45,12 +45,19 @@ class SQLiteManager:
 
     def _apply_pragmas(self):
         """Apply production pragmas for performance and safety."""
-        cursor = self._conn.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA synchronous=NORMAL")
-        cursor.execute("PRAGMA cache_size=-64000")  # 64MB cache
-        cursor.execute("PRAGMA temp_store=MEMORY")
-        self._conn.commit()
+        try:
+            cursor = self._conn.cursor()
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA synchronous=NORMAL")
+            cursor.execute("PRAGMA cache_size=-64000")  # 64MB cache
+            cursor.execute("PRAGMA temp_store=MEMORY")
+            self._conn.commit()
+        except sqlite3.OperationalError as e:
+            if "readonly database" in str(e):
+                import logging
+                logging.getLogger("brahman").warning("Database is read-only; skipping write-dependent pragmas.")
+            else:
+                raise
 
     def get_all_dhatus(self) -> List[Dict]:
         """Load all verbal roots from the database."""
