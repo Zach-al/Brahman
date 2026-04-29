@@ -34,14 +34,36 @@ class SQLiteManager:
             )
 
     def _create_connection(self) -> sqlite3.Connection:
-        """Create a thread-safe SQLite connection."""
-        conn = sqlite3.connect(
-            self.db_path,
-            check_same_thread=False,  # Required for FastAPI async workers
-            timeout=10
-        )
-        conn.row_factory = sqlite3.Row
-        return conn
+        """Create a thread-safe SQLite connection with read-only fallback."""
+        try:
+            # Attempt normal connection
+            conn = sqlite3.connect(
+                self.db_path,
+                check_same_thread=False,
+                timeout=10
+            )
+            # Quick check if we can actually read (triggers WAL index access)
+            conn.execute("SELECT 1").close()
+            conn.row_factory = sqlite3.Row
+            return conn
+        except sqlite3.OperationalError as e:
+            if "readonly" in str(e).lower() or "permission denied" in str(e).lower():
+                import logging
+                logger = logging.getLogger("brahman")
+                logger.warning(f"Database directory not writable. Falling back to immutable mode.")
+                
+                # Use URI with immutable=1. This is required for WAL databases on read-only media
+                # because it tells SQLite to skip WAL index/shared-memory file management.
+                db_uri = f"file:{os.path.abspath(self.db_path)}?mode=ro&immutable=1"
+                conn = sqlite3.connect(
+                    db_uri,
+                    uri=True,
+                    check_same_thread=False,
+                    timeout=10
+                )
+                conn.row_factory = sqlite3.Row
+                return conn
+            raise
 
     def _apply_pragmas(self):
         """Apply production pragmas for performance and safety."""
